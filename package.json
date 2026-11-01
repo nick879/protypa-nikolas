@@ -1,0 +1,18 @@
+{
+  "name": "protypa-nikolas",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Προετοιμασία για τα Πρότυπα Γυμνάσια",
+  "scripts": {
+    "content": "python3 tools/build_content.py",
+    "serve": "npx http-server app -p 8080 -c-1"
+  },
+  "dependencies": {
+    "@capacitor/android": "^8.0.0",
+    "@capacitor/core": "^8.0.0"
+  },
+  "devDependencies": {
+    "@capacitor/assets": "^3.0.5",
+    "@capacitor/cli": "^8.0.0"
+  }
+}

@@ -1,0 +1,313 @@
+"use strict";
+/* ================= ΒΑΣΙΚΑ: εργαλεία, περιεχόμενο, Firebase, δρομολόγηση ================= */
+const CFG = window.APP_CONFIG;
+const $ = s => document.querySelector(s);
+const $$ = s => [...document.querySelectorAll(s)];
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const shuffle = a => { a = a.slice(); for (let i = a.length - 1; i > 0; i--) { const j = Math.random() * (i + 1) | 0; [a[i], a[j]] = [a[j], a[i]]; } return a; };
+const pick = a => a[Math.random() * a.length | 0];
+const DAYMS = 864e5;
+const pct = (a, b) => b ? Math.round(100 * a / b) : 0;
+const z2 = n => String(n).padStart(2, '0');
+const todayStr = (d = new Date()) => d.getFullYear() + '-' + z2(d.getMonth() + 1) + '-' + z2(d.getDate());
+const parseDay = s => { const [y, m, d] = s.split('-').map(Number); return new Date(y, m - 1, d); };
+const fmtDate = (d, o = { day: 'numeric', month: 'long' }) => (d instanceof Date ? d : new Date(d)).toLocaleDateString('el-GR', o);
+const fmtTime = d => new Date(d).toLocaleTimeString('el-GR', { hour: '2-digit', minute: '2-digit' });
+const DOW = ['Κυρ', 'Δευ', 'Τρί', 'Τετ', 'Πέμ', 'Παρ', 'Σάβ'];
+const fmtMin = s => { const m = Math.round(s / 60); return m < 60 ? m + '′' : Math.floor(m / 60) + 'ω ' + (m % 60) + '′'; };
+const SUBJ = { lang: 'Γλώσσα', math: 'Μαθηματικά' };
+function toast(msg, ms = 2600) { const t = document.createElement('div'); t.className = 'toast'; t.textContent = msg; document.body.appendChild(t); setTimeout(() => t.remove(), ms); }
+function render(html) { $('#app').innerHTML = html; }
+// μικρή μορφοποίηση: **έντονα**, _πλάγια_
+function md(s) { return esc(s).replace(/\*\*(.+?)\*\*/g, '<b>$1</b>').replace(/(^|[\s(«])_(.+?)_(?=[\s.,;:!»)]|$)/g, '$1<i>$2</i>').replace(/\n/g, '<br>'); }
+function paragraphs(t) { return String(t || '').split(/\n\s*\n/).map(p => '<p>' + esc(p).replace(/\n/g, '<br>') + '</p>').join(''); }
+
+/* ---------- IndexedDB (cache περιεχομένου) ---------- */
+const IDB = {
+  db: null,
+  open() { return this.db ? Promise.resolve(this.db) : new Promise((res, rej) => { const r = indexedDB.open('protypa', 1); r.onupgradeneeded = () => r.result.createObjectStore('kv'); r.onsuccess = () => { this.db = r.result; res(this.db); }; r.onerror = () => rej(r.error); }); },
+  async get(k) { try { const db = await this.open(); return await new Promise(res => { const r = db.transaction('kv').objectStore('kv').get(k); r.onsuccess = () => res(r.result); r.onerror = () => res(null); }); } catch (e) { return null; } },
+  async put(k, v) { try { const db = await this.open(); await new Promise(res => { const t = db.transaction('kv', 'readwrite'); t.objectStore('kv').put(v, k); t.oncomplete = res; t.onerror = res; }); } catch (e) { } }
+};
+
+/* ---------- Περιεχόμενο ---------- */
+let C = null, Q = [], QBY = {}, PBY = {}, TOP = {}, THBY = {}, LESSONBY = {};
+const CHAPTER_ORDER = ['γλ-κατανόηση', 'μθ-αριθμοί', 'γλ-λεξιλόγιο', 'μθ-κλάσματα', 'γλ-γραμματική', 'μθ-ποσοστά', 'γλ-σύνταξη', 'μθ-μετρήσεις', 'γλ-νόημα', 'μθ-εξισώσεις', 'γλ-ορθογραφία', 'μθ-γεωμετρία', 'μθ-στατιστική', 'μθ-λογική'];
+function indexContent() {
+  Q = C.questions.filter(q => !q.retired);
+  QBY = Object.fromEntries(C.questions.map(q => [q.id, q]));
+  PBY = Object.fromEntries(C.passages.map(p => [p.id, p]));
+  TOP = Object.fromEntries(C.topics.map(t => [t.id, t]));
+  THBY = Object.fromEntries(C.theory.map(t => [t.id, t]));
+  LESSONBY = {}; C.theory.forEach(ch => ch.lessons.forEach((l, i) => LESSONBY[l.id] = { ...l, chapter: ch.id, idx: i }));
+}
+async function loadContent() {
+  let local = null;
+  try { local = await (await fetch('content/content.json', { cache: 'no-cache' })).json(); } catch (e) { }
+  const cached = await IDB.get('content');
+  C = (cached && (!local || cached.version > local.version)) ? cached : local;
+  if (!C) throw new Error('Δεν βρέθηκε περιεχόμενο');
+  indexContent();
+  checkRemoteContent();
+}
+async function checkRemoteContent() {
+  try {
+    const man = await (await fetch(CFG.remoteBase + 'content/manifest.json?t=' + Date.now(), { cache: 'no-store' })).json();
+    if (man.version > C.version) {
+      const nc = await (await fetch(CFG.remoteBase + 'content/content.json?v=' + man.version, { cache: 'no-store' })).json();
+      await IDB.put('content', nc); C = nc; indexContent();
+      toast(`Νέο περιεχόμενο (έκδοση ${man.version}): ${man.notes || ''}`, 5000);
+      route();
+    }
+  } catch (e) { /* εκτός σύνδεσης: συνεχίζουμε με ό,τι έχουμε */ }
+}
+function figHTML(path, alt = 'Σχήμα') { return path ? `<img class="fig" src="${esc(path)}" alt="${alt}" onerror="this.onerror=null;this.src='${CFG.remoteBase}${esc(path)}'">` : ''; }
+function examDate() { return (SET && SET.examDate) || C.exam.date; }
+function daysToExam() { return Math.ceil((parseDay(examDate()) - parseDay(todayStr())) / DAYMS); }
+
+/* ---------- Firebase ---------- */
+let fbApp, auth, db, USER = null;
+let PROG = null, PROG_SERVER = null, SET = {}, SESS = [], MOCKS = [], TASKS = [], NOTES = [], LESSONS = [];
+let progDirty = false, progTimer = null, unsubs = [];
+function fbInit() {
+  fbApp = FB.initializeApp(CFG.firebase);
+  auth = FB.initializeAuth(fbApp, { persistence: [FB.indexedDBLocalPersistence, FB.browserLocalPersistence] });
+  try { db = FB.initializeFirestore(fbApp, { localCache: FB.persistentLocalCache({ tabManager: FB.persistentSingleTabManager() }) }); }
+  catch (e) { db = FB.initializeFirestore(fbApp, { localCache: FB.memoryLocalCache() }); }
+}
+const R = {
+  prog: () => FB.doc(db, 'family', 'main', 'progress', 'nikolas'),
+  set: () => FB.doc(db, 'family', 'main', 'meta', 'settings'),
+  col: name => FB.collection(db, 'family', 'main', name),
+  doc: (name, id) => FB.doc(db, 'family', 'main', name, id)
+};
+function emptyProg() { return { qs: {}, xp: 0, games: {}, lessons: {}, tests: {}, updatedAt: 0 }; }
+function startListeners() {
+  unsubs.forEach(u => u()); unsubs = [];
+  const onErr = e => { console.warn(e); if (e.code === 'permission-denied') { render(`<div class="card mt2"><h3>Δεν υπάρχει πρόσβαση</h3><p>Οι κανόνες της βάσης δεν επιτρέπουν σε αυτόν τον λογαριασμό να δει τα δεδομένα. Ο γονιός πρέπει να ενημερώσει τους κανόνες στο Firebase (δες το README).</p><button class="btn" onclick="logout()">Αποσύνδεση</button></div>`); } };
+  unsubs.push(FB.onSnapshot(R.prog(), s => { PROG_SERVER = Object.assign(emptyProg(), s.exists() ? s.data() : {}); if (!progDirty && !STUDENT_PREVIEW) { PROG = JSON.parse(JSON.stringify(PROG_SERVER)); softRefresh(); } }, onErr));
+  unsubs.push(FB.onSnapshot(R.set(), s => { SET = s.exists() ? s.data() : {}; softRefresh(); }, onErr));
+  const q = (n, lim) => FB.query(R.col(n), FB.orderBy('ts', 'desc'), FB.limit(lim));
+  unsubs.push(FB.onSnapshot(q('sessions', 500), s => { SESS = s.docs.map(d => ({ id: d.id, ...d.data() })); softRefresh(); }, onErr));
+  unsubs.push(FB.onSnapshot(q('mocks', 100), s => { MOCKS = s.docs.map(d => ({ id: d.id, ...d.data() })); softRefresh(); }, onErr));
+  unsubs.push(FB.onSnapshot(q('tasks', 200), s => { TASKS = s.docs.map(d => ({ id: d.id, ...d.data() })); softRefresh(); }, onErr));
+  unsubs.push(FB.onSnapshot(q('notes', 300), s => { NOTES = s.docs.map(d => ({ id: d.id, ...d.data() })); softRefresh(); }, onErr));
+  unsubs.push(FB.onSnapshot(q('lessons', 200), s => { LESSONS = s.docs.map(d => ({ id: d.id, ...d.data() })); softRefresh(); }, onErr));
+}
+// Ανανέωση οθόνης όταν έρθουν δεδομένα — μόνο σε «ήσυχες» οθόνες
+let softTimer = null;
+function softRefresh() { clearTimeout(softTimer); softTimer = setTimeout(() => { if (QUIET_VIEWS.has(CUR)) route(true); updateTabs(); }, 250); }
+function saveProg() {
+  if (!isStudent()) return;
+  progDirty = true; PROG.updatedAt = Date.now();
+  clearTimeout(progTimer);
+  progTimer = setTimeout(() => { const data = JSON.parse(JSON.stringify(PROG)); FB.setDoc(R.prog(), data).catch(e => console.warn(e)); progDirty = false; }, 1200);
+}
+function addDocTo(name, obj) { return FB.addDoc(R.col(name), Object.assign({ ts: Date.now(), by: USER.email, byName: USER.name }, obj)).catch(e => { console.warn(e); toast('Δεν αποθηκεύτηκε: ' + e.message); }); }
+function updDoc(name, id, obj) { return FB.updateDoc(R.doc(name, id), obj).catch(e => console.warn(e)); }
+function delDoc(name, id) { return FB.deleteDoc(R.doc(name, id)).catch(e => console.warn(e)); }
+function isStudent() { return USER && USER.role === 'student'; }
+function isParent() { return USER && USER.role === 'parent'; }
+async function logout() { unsubs.forEach(u => u()); unsubs = []; await FB.signOut(auth); }
+
+/* ---------- Μοντέλο μάθησης ---------- */
+const BOX_INT = [0, 1, 3, 7, 16, 35];
+function recordAnswer(q, ok) {
+  const s = PROG.qs[q.id] || [0, 0, 0, 0, 0];
+  s[0]++; if (ok) s[1]++; s[2] = Date.now(); s[3] = ok ? Math.min(s[3] + 1, 5) : 1; s[4] = ok ? 1 : 0;
+  PROG.qs[q.id] = s; PROG.xp = (PROG.xp || 0) + (ok ? 10 : 2);
+}
+const isDue = s => s && Date.now() >= s[2] + BOX_INT[s[3]] * DAYMS;
+function topicStats(t, prog = PROG) {
+  const qs = Q.filter(q => q.topic === t); let att = 0, cor = 0, seen = 0;
+  for (const q of qs) { const s = prog.qs[q.id]; if (s) { att += s[0]; cor += s[1]; seen++; } }
+  return { total: qs.length, seen, att, cor, acc: att ? cor / att : null };
+}
+function subjectStats(sj) { let att = 0, cor = 0; for (const q of Q) { if (q.subject !== sj) continue; const s = PROG.qs[q.id]; if (s) { att += s[0]; cor += s[1]; } } return { att, cor, acc: att ? cor / att : null }; }
+function weakTopics(n = 3, subj) {
+  return C.topics.filter(t => !subj || t.subject === subj).map(t => { const s = topicStats(t.id); return { t: t.id, sc: (s.acc === null ? .55 : s.acc) - .15 * (s.seen / s.total) }; })
+    .sort((a, b) => a.sc - b.sc).slice(0, n).map(x => x.t);
+}
+function chapterProgress(chId) {
+  const ch = THBY[chId]; if (!ch) return { lessonsDone: 0, lessons: 0, test: null, stats: topicStats(chId) };
+  const done = ch.lessons.filter(l => PROG.lessons && PROG.lessons[l.id]).length;
+  return { lessonsDone: done, lessons: ch.lessons.length, test: (PROG.tests || {})[chId] || null, stats: topicStats(chId) };
+}
+function secondsOn(day) { return SESS.filter(s => s.day === day).reduce((a, s) => a + (s.sec || 0), 0); }
+function streak() { let n = 0, d = new Date(); if (!secondsOn(todayStr(d))) d = new Date(d - DAYMS); while (secondsOn(todayStr(d)) > 0) { n++; d = new Date(d - DAYMS); } return n; }
+const level = xp => Math.floor(Math.sqrt((xp || 0) / 50)) + 1;
+function logSession(o) {
+  const s = Object.assign({ day: todayStr(), who: USER.email }, o); s.sec = Math.round(s.sec || 0);
+  if (isStudent()) addDocTo('sessions', s);
+  return s;
+}
+
+/* ---------- Πρόγραμμα μελέτης ---------- */
+function planWeeks() {
+  const exam = parseDay(examDate()); const today = parseDay(todayStr());
+  const start0 = SET.planStart ? parseDay(SET.planStart) : parseDay('2026-11-02');
+  let start = new Date(Math.min(start0, today)); start.setDate(start.getDate() - ((start.getDay() + 6) % 7));
+  const weeks = []; let w = new Date(start);
+  const total = Math.max(1, Math.round((exam - start) / (7 * DAYMS)));
+  const ph1 = Math.min(14, Math.max(6, Math.round(total * .5)));
+  let i = 0;
+  while (w <= exam && i < 80) {
+    const daysLeft = (exam - w) / DAYMS; let phase;
+    if (daysLeft <= 7) phase = 4; else if (i < ph1) phase = 1; else if (daysLeft <= 50) phase = 3; else phase = 2;
+    const wk = { start: new Date(w), end: new Date(w.getTime() + 6 * DAYMS), phase, idx: i };
+    if (phase === 1) {
+      const per = 14 / ph1; const a = Math.floor(i * per), b = Math.max(a + 1, Math.floor((i + 1) * per));
+      wk.chapters = CHAPTER_ORDER.slice(a, Math.min(b, 14));
+    }
+    weeks.push(wk); w = new Date(w.getTime() + 7 * DAYMS); i++;
+  }
+  return weeks;
+}
+const PHASES = { 1: { n: 'Θεωρία & κεφάλαια', c: '#2f5bd3', d: 'Κάθε εβδομάδα ένα–δύο κεφάλαια: θεωρία, λυμένα παραδείγματα, ερωτήσεις ελέγχου, τεστ κεφαλαίου.' }, 2: { n: 'Εξάσκηση', c: '#7a3fd1', d: 'Επίσημα θέματα ανά ενότητα, κείμενα, έμφαση στις αδύναμες ενότητες, μισό διαγώνισμα κάθε 2 εβδομάδες.' }, 3: { n: 'Διαγωνίσματα', c: '#0b8a6b', d: 'Πλήρες διαγώνισμα με φύλλο απαντήσεων κάθε Σάββατο 10:00 και διόρθωση την Κυριακή.' }, 4: { n: 'Τελική ευθεία', c: '#d1493f', d: 'Ελαφριά επανάληψη, ξεκούραση, ύπνος.' } };
+function currentWeek() { const t = parseDay(todayStr()); return planWeeks().find(w => t >= w.start && t <= w.end); }
+function currentChapter() {
+  if (SET.currentChapter && THBY[SET.currentChapter]) return SET.currentChapter;
+  const wk = currentWeek(); if (wk && wk.chapters && wk.chapters.length) {
+    const notDone = wk.chapters.find(c => { const p = chapterProgress(c); return p.lessonsDone < p.lessons; });
+    return notDone || wk.chapters[wk.chapters.length - 1];
+  }
+  const first = CHAPTER_ORDER.find(c => { const p = chapterProgress(c); return p.lessonsDone < p.lessons; });
+  return first || CHAPTER_ORDER[0];
+}
+function dayTasks(wk, date) {
+  const dow = date.getDay(); const T = [];
+  if (wk.phase === 1) {
+    const chs = wk.chapters || []; const ch = chs[(dow + 1) % Math.max(1, chs.length)] || chs[0];
+    const name = ch ? TOP[ch].name : '';
+    if (dow === 0) T.push(['🎮', 'Παιχνίδια + «Τα λάθη μου»', 'mistakes']);
+    else if (dow === 6) T.push(['📝', `Τεστ κεφαλαίου: ${name}`, 'test:' + ch]);
+    else if (dow === 5) T.push(['✏️', `Εξάσκηση: ${name} (10 ερωτήσεις)`, 'topic:' + ch]);
+    else T.push(['📘', `Θεωρία: ${name} — επόμενο μάθημα`, 'chapter:' + ch]);
+  } else if (wk.phase === 2) {
+    if (dow === 6 && wk.idx % 2 === 0) T.push(['⏱️', 'Μισό διαγώνισμα (75′)', 'mock']);
+    else if (dow === 6 || dow === 3) T.push(['📖', 'Ένα κείμενο Γλώσσας', 'reading']);
+    else if (dow === 0) T.push(['🔁', 'Τα λάθη μου + παιχνίδια', 'mistakes']);
+    else T.push(['🧠', 'Έξυπνη εξάσκηση (αδύναμες ενότητες)', 'smart']);
+  } else if (wk.phase === 3) {
+    if (dow === 6) T.push(['⏱️', 'Πλήρες διαγώνισμα με φύλλο απαντήσεων (150′, 10:00)', 'mock']);
+    else if (dow === 0) T.push(['🔁', 'Διόρθωση & λάθη του διαγωνίσματος', 'mistakes']);
+    else if (dow === 2 || dow === 4) T.push(['📖', 'Ένα κείμενο', 'reading']);
+    else T.push(['🧠', 'Έξυπνη εξάσκηση', 'smart']);
+  } else {
+    if (dow === 5 || dow === 6) T.push(['😴', 'Ξεκούραση, νωρίς ύπνος, έτοιμα τα πράγματα', null]);
+    else T.push(['🔁', 'Λίγη επανάληψη λαθών (15′)', 'mistakes']);
+  }
+  return T;
+}
+function doAction(a, taskId) {
+  CUR_TASK = taskId || null;
+  if (!a) return;
+  if (a === 'mistakes') startMistakes(); else if (a === 'reading') go('reading'); else if (a === 'mock') go('mock'); else if (a === 'smart') startSmart(); else if (a === 'games') go('games');
+  else if (a.startsWith('topic:')) startTopic(a.slice(6));
+  else if (a.startsWith('test:')) startChapterTest(a.slice(5));
+  else if (a.startsWith('chapter:')) openChapter(a.slice(8), true);
+  else if (a.startsWith('lesson:')) openLesson(a.slice(7));
+  else if (a.startsWith('passage:')) startPassage(a.slice(8));
+  else if (a.startsWith('exam:')) startMock(a.slice(5));
+  else if (a.startsWith('qids:')) { const t = TASKS.find(x => x.id === taskId); startQuiz((t.qids || []).map(id => QBY[id]).filter(Boolean), t.title); }
+}
+let CUR_TASK = null;
+function completeTask(result) {
+  if (!CUR_TASK || !isStudent()) return;
+  updDoc('tasks', CUR_TASK, { status: 'done', doneTs: Date.now(), result: result || '' }); CUR_TASK = null;
+}
+
+/* ---------- Δρομολόγηση ---------- */
+const VIEWS = {}; let CUR = 'home', PARAM = null, LEAVE_GUARD = null;
+const QUIET_VIEWS = new Set(['home', 'plan', 'chapters', 'practice', 'mock', 'games', 'notes', 'p-home', 'p-chapters', 'p-tasks', 'p-history', 'p-settings', 'account', 'reading']);
+function go(v, param) {
+  if (LEAVE_GUARD && !LEAVE_GUARD(v)) return; LEAVE_GUARD = null; PARAM = param ?? null;
+  if (location.hash === '#' + v) route(); else location.hash = v;
+}
+window.addEventListener('hashchange', () => {
+  if (LEAVE_GUARD) { const v = location.hash.slice(1) || 'home'; if (!LEAVE_GUARD(v)) { history.replaceState(null, '', '#' + CUR); return; } LEAVE_GUARD = null; }
+  route();
+});
+let TIMERS = [];
+function stopTimers() { TIMERS.forEach(t => clearInterval(t)); TIMERS = []; }
+function route(soft) {
+  if (!USER) return;
+  if (!soft) stopTimers();
+  let v = location.hash.slice(1) || 'home';
+  if (isParent() && !STUDENT_PREVIEW && VIEWS['p-' + v]) v = 'p-' + v;
+  if (!VIEWS[v]) v = isParent() && !STUDENT_PREVIEW ? 'p-home' : 'home';
+  if (soft && v !== CUR) return;
+  CUR = v; updateTabs();
+  const y = window.scrollY; VIEWS[v](PARAM);
+  if (soft) window.scrollTo(0, y); else window.scrollTo(0, 0);
+}
+let STUDENT_PREVIEW = false;
+function togglePreview() { STUDENT_PREVIEW = !STUDENT_PREVIEW; if (!STUDENT_PREVIEW && PROG_SERVER) PROG = JSON.parse(JSON.stringify(PROG_SERVER)); go('home'); }
+function updateTabs() {
+  const studentTabs = [['home', '🏠', 'Αρχική'], ['chapters', '📘', 'Κεφάλαια'], ['practice', '✏️', 'Εξάσκηση'], ['mock', '⏱️', 'Διαγώνισμα'], ['games', '🎮', 'Παιχνίδια']];
+  const parentTabs = [['home', '📊', 'Επισκόπηση'], ['chapters', '📘', 'Κεφάλαια'], ['tasks', '📌', 'Αναθέσεις'], ['history', '🗂️', 'Ιστορικό'], ['settings', '⚙️', 'Ρυθμίσεις']];
+  const tabs = isParent() && !STUDENT_PREVIEW ? parentTabs : studentTabs;
+  const base = CUR.replace(/^p-/, '');
+  const unreadNotes = isStudent() ? NOTES.filter(n => !n.seen).length : 0;
+  const openTasks = isStudent() ? TASKS.filter(t => t.status !== 'done').length : 0;
+  $('#tabsIn').innerHTML = tabs.map(([k, i, l]) => `<button class="${base === k || (k === 'practice' && base === 'reading') ? 'on' : ''}" onclick="go('${k}')"><span class="i">${i}</span>${l}${k === 'home' && (unreadNotes || openTasks) ? '<span class="dot"></span>' : ''}</button>`).join('');
+  $('#tabs').classList.toggle('hide', !USER || ['quiz', 'exam', 'game', 'login', 'lesson'].includes(CUR));
+  const wb = $('#whoBtn');
+  if (USER) { wb.classList.remove('hide'); wb.innerHTML = (isParent() ? (STUDENT_PREVIEW ? '👀 προβολή μαθητή · ' : '👤 ') : '🦉 ') + esc(USER.name); } else wb.classList.add('hide');
+}
+
+/* ---------- Παράθυρα ---------- */
+function modal(html) { $('#modalRoot').innerHTML = `<div class="modal" onclick="if(event.target===this)closeModal()"><div class="card">${html}</div></div>`; }
+function closeModal() { $('#modalRoot').innerHTML = ''; }
+function confirmBox(msg, yes, onYes, danger) {
+  modal(`<p style="margin-top:0;font-size:17px">${msg}</p><div class="row" style="justify-content:flex-end"><button class="btn ghost" onclick="closeModal()">Άκυρο</button><button class="btn ${danger ? 'danger' : ''}" id="cfYes">${yes}</button></div>`);
+  $('#cfYes').onclick = () => { closeModal(); onYes(); };
+}
+
+/* ---------- Σύνδεση ---------- */
+VIEWS.login = function () {
+  render(`<div style="max-width:420px;margin:40px auto">
+    <div class="center"><div class="logo" style="width:64px;height:64px;border-radius:18px;background:var(--acc);color:#fff;display:grid;place-items:center;font-size:32px;font-weight:800;margin:0 auto">Π</div>
+    <h1 class="mt">Πρότυπα · Προετοιμασία</h1><p class="sub">Σύνδεση με τον λογαριασμό σου</p></div>
+    <div class="card"><form id="lf">
+      <div class="field"><label>Email</label><input id="le" type="email" autocomplete="username" required></div>
+      <div class="field"><label>Κωδικός</label><input id="lp" type="password" autocomplete="current-password" required></div>
+      <button class="btn block" id="lb">Σύνδεση</button>
+      <p class="small mute center" id="lerr" style="min-height:20px"></p>
+      <p class="small center" style="margin:0"><a href="#" id="lforgot">Ξέχασα τον κωδικό</a></p>
+    </form></div></div>`);
+  $('#lf').onsubmit = async e => {
+    e.preventDefault(); $('#lb').disabled = true; $('#lerr').textContent = 'Σύνδεση…';
+    try { await FB.signInWithEmailAndPassword(auth, $('#le').value.trim(), $('#lp').value); }
+    catch (er) { $('#lb').disabled = false; $('#lerr').textContent = /network/.test(er.code) ? 'Χρειάζεται σύνδεση στο internet για την πρώτη είσοδο.' : 'Λάθος email ή κωδικός.'; }
+  };
+  $('#lforgot').onclick = async e => { e.preventDefault(); const em = $('#le').value.trim(); if (!em) { $('#lerr').textContent = 'Γράψε πρώτα το email σου.'; return; } try { await FB.sendPasswordResetEmail(auth, em); $('#lerr').textContent = 'Στάλθηκε email αλλαγής κωδικού.'; } catch (er) { $('#lerr').textContent = 'Δεν στάλθηκε: ' + er.code; } };
+};
+VIEWS.account = function () {
+  render(`<h1>Λογαριασμός</h1><div class="card"><p style="margin-top:0"><b>${esc(USER.name)}</b><br><span class="mute small">${esc(USER.email)}</span></p>
+    <p class="small mute">Περιεχόμενο: έκδοση ${C.version} · ${Q.length} ερωτήσεις · ${C.theory.length} κεφάλαια θεωρίας</p>
+    <div class="row">${isParent() ? `<button class="btn soft" onclick="togglePreview()">${STUDENT_PREVIEW ? '↩︎ Πίσω στην οθόνη γονέα' : '👀 Δες την εφαρμογή όπως ο Νικόλας'}</button>` : ''}
+    <button class="btn ghost" onclick="checkRemoteContent().then(()=>toast('Έλεγχος για νέο περιεχόμενο: έγινε'))">⟳ Έλεγχος για νέο περιεχόμενο</button>
+    <button class="btn ghost" onclick="go('info')">ℹ️ Για την εξέταση</button>
+    <button class="btn danger" onclick="logout()">Αποσύνδεση</button></div></div>
+    ${isParent() && STUDENT_PREVIEW ? '<p class="small mute">Στην προβολή μαθητή ό,τι απαντήσεις ΔΕΝ μετράει στην πρόοδο του Νικόλα.</p>' : ''}`);
+};
+
+/* ---------- Εκκίνηση ---------- */
+function setNet() { $('#netState').textContent = navigator.onLine ? '' : '⚠ εκτός σύνδεσης'; }
+window.addEventListener('online', () => { setNet(); checkRemoteContent(); }); window.addEventListener('offline', setNet);
+async function boot() {
+  setNet();
+  try { await loadContent(); } catch (e) { render(`<div class="card mt2">Δεν φορτώθηκε το περιεχόμενο. Έλεγξε τη σύνδεση και άνοιξε ξανά την εφαρμογή.</div>`); return; }
+  fbInit();
+  FB.onAuthStateChanged(auth, u => {
+    if (!u) { USER = null; PROG = null; CUR = 'login'; updateTabs(); VIEWS.login(); return; }
+    const m = CFG.members[(u.email || '').toLowerCase()];
+    if (!m) { render(`<div class="card mt2"><h3>Ο λογαριασμός ${esc(u.email)} δεν ανήκει στην οικογένεια.</h3><button class="btn" onclick="logout()">Αποσύνδεση</button></div>`); return; }
+    USER = Object.assign({ email: u.email.toLowerCase(), uid: u.uid }, m);
+    PROG = emptyProg();
+    startListeners();
+    history.replaceState(null, '', '#home'); CUR = 'home'; route();
+  });
+}
+document.addEventListener('DOMContentLoaded', boot);

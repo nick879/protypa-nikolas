@@ -1,0 +1,6 @@
+{
+  "appId": "gr.protypa.nikolas",
+  "appName": "Πρότυπα",
+  "webDir": "app",
+  "android": { "allowMixedContent": false }
+}

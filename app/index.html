@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="el">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Πρότυπα · Προετοιμασία</title>
+<meta name="theme-color" content="#2f5bd3">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Πρότυπα">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="icon" href="icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Commissioner:wght@400;500;600;700;800&family=Noto+Serif:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="app.css">
+</head>
+<body>
+<header class="top"><div class="in">
+  <button class="brand" onclick="go('home')"><span class="logo">Π</span><span class="bt">Πρότυπα</span></button>
+  <span class="spacer"></span>
+  <span id="netState" class="sync"></span>
+  <button id="whoBtn" class="who hide" onclick="go('account')"></button>
+</div></header>
+<main class="wrap" id="app"><div class="center mt2 mute">Φόρτωση…</div></main>
+<nav class="tabs hide" id="tabs"><div class="in" id="tabsIn"></div></nav>
+<div id="modalRoot"></div>
+<script src="firebase-config.js"></script>
+<script src="vendor/firebase.js"></script>
+<script src="core.js"></script>
+<script src="student.js"></script>
+<script src="exam.js"></script>
+<script src="parent.js"></script>
+<script>if ('serviceWorker' in navigator && /github\.io$/.test(location.hostname)) navigator.serviceWorker.register('sw.js');</script>
+</body>
+</html>
