@@ -96,7 +96,7 @@ function startListeners() {
 }
 // Ανανέωση οθόνης όταν έρθουν δεδομένα — μόνο σε «ήσυχες» οθόνες
 let softTimer = null;
-function softRefresh() { clearTimeout(softTimer); softTimer = setTimeout(() => { if (QUIET_VIEWS.has(CUR)) route(true); updateTabs(); }, 250); }
+function softRefresh() { clearTimeout(softTimer); softTimer = setTimeout(() => { if (QUIET_VIEWS.has(CUR)) route(true); updateTabs(); if (window.scheduleNotifications) { scheduleNotifications(); notifyNewTasks(); } }, 250); }
 function saveProg() {
   if (!isStudent()) return;
   progDirty = true; PROG.updatedAt = Date.now();

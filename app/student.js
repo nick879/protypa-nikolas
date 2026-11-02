@@ -30,7 +30,7 @@ VIEWS.home = function () {
       </div>
       <div class="bar mt" style="background:rgba(255,255,255,.25)"><i style="width:${Math.min(100, pct(today, goal))}%;background:#fff"></i></div>
       <div class="row mt">${tasksToday.filter(x => x[2]).map(x => `<button class="btn sm" style="background:#fff;color:var(--acc)" onclick="doAction('${x[2]}')">Ξεκίνα</button>`).join('')}<button class="btn sm" style="background:rgba(255,255,255,.18)" onclick="go('plan')">📅 Πρόγραμμα</button></div>
-      <div class="small mt" style="opacity:.9">${kidStatus(P)}</div>
+      <div class="small mt" style="opacity:.9">${studyTime() ? '⏰ Σήμερα διάβασμα στις <b>' + studyTime() + '</b> · ' : ''}${kidStatus(P)}</div>
     </div>
     <h2>Το κεφάλαιο που δουλεύεις</h2>
     <button class="tile" onclick="openChapter('${ch}')" style="width:100%">${topicTag(ch)}<b>${esc(THBY[ch] ? THBY[ch].title : TOP[ch].name)}</b>
@@ -84,7 +84,7 @@ VIEWS.plan = function () {
     <div class="card"><b>${kidStatus(P) || 'Ξεκινάμε!'}</b><div class="bar mt"><i style="width:${pct(P.done, P.total)}%"></i></div><div class="small mute mt">Θεωρία: ${P.done}/${P.total} βήματα · στόχος να τελειώσει ως ${fmtDate(P.theoryEnd, { day: 'numeric', month: 'long' })}</div></div>
     <h2>Αυτή την εβδομάδα</h2><div class="card" style="padding:8px 12px">${[...Array(7)].map((_, i) => { const d = addDays(mon, i); const ds = todayStr(d); const m = secondsOn(ds) / 60; const ok = m >= goal * .8; const isT = ds === todayStr(); const fut = d > t;
       const tk = isT ? todayTasks(d) : [];
-      return `<div class="day ${isT ? 'today' : ''}"><span class="chk ${ok ? 'on' : ''}">${ok ? '✓' : ''}</span><span class="d">${DOW[d.getDay()]} ${d.getDate()}/${d.getMonth() + 1}</span><span class="grow small">${isT ? tk.map(x => x[0] + ' ' + esc(x[1])).join('<br>') : fut ? '<span class="mute">—</span>' : `<span class="mute">${Math.round(m)}′</span>`}</span>${isT && tk[0] && tk[0][2] ? `<button class="btn sm" onclick="doAction('${tk[0][2]}')">Πάμε</button>` : ''}</div>`; }).join('')}</div>
+      return `<div class="day ${isT ? 'today' : ''}"><span class="chk ${ok ? 'on' : ''}">${ok ? '✓' : ''}</span><span class="d">${DOW[d.getDay()]} ${d.getDate()}/${d.getMonth() + 1}${studyTime(d) ? `<br><span class="small mute">⏰ ${studyTime(d)}</span>` : ''}</span><span class="grow small">${isT ? tk.map(x => x[0] + ' ' + esc(x[1])).join('<br>') : fut ? '<span class="mute">—</span>' : `<span class="mute">${Math.round(m)}′</span>`}</span>${isT && tk[0] && tk[0][2] ? `<button class="btn sm" onclick="doAction('${tk[0][2]}')">Πάμε</button>` : ''}</div>`; }).join('')}</div>
     <h2>Κεφάλαια με τη σειρά</h2><div class="card">${planChaptersHTML(P, false)}</div>
     <h2>Φάσεις ως την εξέταση</h2>${phasesHTML(P)}
     <div class="week"><b>🎯 ${fmtDate(P.exam, { weekday: 'long', day: 'numeric', month: 'long' })}: Εξέταση</b><div class="small mute">Είσοδος ως τις ${C.exam.arrive}, έναρξη ${C.exam.start}.</div></div>`);

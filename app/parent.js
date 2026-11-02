@@ -24,7 +24,7 @@ VIEWS['p-home'] = function () {
       <div class="row mt"><button class="btn sm" style="background:#fff;color:var(--acc)" onclick="go('chapter','${ch}')">Θεωρία & οδηγός γονέα</button><button class="btn sm" style="background:rgba(255,255,255,.18)" onclick="taskForm({action:'chapter:${ch}',title:'Θεωρία: ${esc(TOP[ch].name)}'})">📌 Ανάθεση</button></div></div>
     ${paceCard(planInfo())}
     <div class="grid g4 mt">
-      <div class="card"><div class="lab">Σήμερα</div><div class="big">${week[6][1]}′</div><div class="small mute">στόχος ${goal}′</div></div>
+      <div class="card"><div class="lab">Σήμερα</div><div class="big">${week[6][1]}′</div><div class="small mute">στόχος ${goal}′${studyTime() ? ' · ώρα ' + studyTime() : ' · χωρίς ώρα'}</div></div>
       <div class="card"><div class="lab">Σερί</div><div class="big">🔥 ${streak()}</div><div class="small mute">μέρες</div></div>
       <div class="card"><div class="lab">${SUBJ[f]}</div><div class="big" style="color:var(--${f})">${st[f].acc === null ? '—' : Math.round(st[f].acc * 100) + '%'}</div><div class="small mute">${st[f].att} απαντήσεις</div></div>
       <div class="card"><div class="lab">${SUBJ[other]}</div><div class="big" style="color:var(--${other})">${st[other].acc === null ? '—' : Math.round(st[other].acc * 100) + '%'}</div><div class="small mute">${st[other].att} απαντήσεις</div></div>
@@ -164,6 +164,7 @@ VIEWS['p-settings'] = function () {
       <div class="field"><label>Έναρξη προγράμματος</label><input type="date" id="sP" value="${esc(SET.planStart || '2026-11-02')}"></div>
       <div class="field"><label>Τρέχον κεφάλαιο</label><select id="sC"><option value="">Αυτόματα (το πρώτο μη ολοκληρωμένο στη σειρά)</option>${CHAPTER_ORDER.map(c => `<option value="${c}" ${SET.currentChapter === c ? 'selected' : ''}>${esc(THBY[c] ? THBY[c].title : TOP[c].name)} (${SUBJ[TOP[c].subject]})</option>`).join('')}</select></div>
       <button class="btn" onclick="setSettings({examDate:$('#sD').value||null,dailyMin:+$('#sM').value||25,planStart:$('#sP').value||null,currentChapter:$('#sC').value||null,theoryWeeks:+$('#sW').value||12})">Αποθήκευση</button></div>
+    <h2>Ώρες διαβάσματος</h2><div id="schBox">${scheduleEditorHTML()}</div>
     <h2 id="ordEd">Σειρά κεφαλαίων</h2><div id="ordBox">${orderEditorHTML()}</div>
     <h2>Περιεχόμενο</h2><div class="card small">Έκδοση <b>${C.version}</b> · ${Q.length} ερωτήσεις (${Q.filter(q => q.kind === 'exam').length} από εξετάσεις, ${Q.filter(q => q.kind === 'indicative' || q.kind === 'collection').length} ενδεικτικές, ${Q.filter(q => q.kind === 'new').length} νέες εξάσκησης) · ${C.passages.length} κείμενα · ${C.theory.length} κεφάλαια θεωρίας.
       <div class="mt">Το νέο περιεχόμενο κατεβαίνει μόνο του όταν ανοίγει η εφαρμογή· η πρόοδος δεν χάνεται.</div><button class="btn sm ghost mt" onclick="checkRemoteContent().then(()=>toast('Έγινε έλεγχος'))">⟳ Έλεγχος τώρα</button></div>
@@ -216,4 +217,19 @@ async function resetAll() {
     await IDB.put('exam-run', null);
     toast('Έγινε! Όλα ξεκινούν από σήμερα.', 4000); go('home');
   } catch (e) { toast('Σφάλμα: ' + e.message, 6000); }
+}
+
+/* ---------- Ώρες διαβάσματος ανά ημέρα ---------- */
+function scheduleEditorHTML() {
+  const sch = SET.schedule || {}; const order = [1, 2, 3, 4, 5, 6, 0];
+  return `<div class="card"><p class="small" style="margin-top:0">Ορίστε τι ώρα θα διαβάζει ο Νικόλας κάθε μέρα. Εκείνη την ώρα το κινητό του (Android) θα του βγάλει ειδοποίηση με τη σημερινή του εργασία. Αφήστε κενό τις μέρες χωρίς διάβασμα. Αν έχει ήδη πιάσει τον στόχο λεπτών πριν την ώρα, η ειδοποίηση δεν έρχεται.</p>
+    ${order.map(d => `<div class="list-item" style="padding:6px 0"><span style="width:96px;font-weight:700">${DAY_NAMES[d]}</span><input type="time" id="sch${d}" value="${esc(sch[d] || '')}" style="max-width:130px"><button class="btn ghost sm" onclick="$('#sch${d}').value=''">✕</button><span class="grow"></span></div>`).join('')}
+    <div class="row mt"><button class="btn sm ghost" onclick="[2,3,4,5].forEach(d=>$('#sch'+d).value=$('#sch1').value)">Ίδια ώρα Δευτ.–Παρ.</button></div>
+    <div class="field mt"><label>Δεύτερη υπενθύμιση, αν δεν έχει διαβάσει καθόλου εκείνη τη μέρα (προαιρετικό)</label><div class="row" style="flex-wrap:nowrap"><input type="time" id="schLate" value="${esc(SET.reminderLate || '')}" style="max-width:130px"><button class="btn ghost sm" onclick="$('#schLate').value=''">✕</button></div></div>
+    <button class="btn" onclick="saveSchedule()">Αποθήκευση ωρών</button>
+    <div class="small mute mt">Οι αλλαγές φτάνουν στο κινητό του μόλις ανοίξει την εφαρμογή (ή αν είναι ήδη ανοιχτή, αμέσως). Την πρώτη φορά το Android θα ζητήσει άδεια για ειδοποιήσεις: πρέπει να πατήσει «Να επιτρέπεται».</div></div>`;
+}
+function saveSchedule() {
+  const sch = {}; [0, 1, 2, 3, 4, 5, 6].forEach(d => { const v = $('#sch' + d).value; if (v) sch[d] = v; });
+  FB.setDoc(R.set(), { schedule: sch, reminderLate: $('#schLate').value || null }, { merge: true }).then(() => toast('Οι ώρες αποθηκεύτηκαν')).catch(e => toast('Σφάλμα: ' + e.message));
 }
