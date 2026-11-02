@@ -170,3 +170,8 @@ input[type=checkbox]{width:18px;height:18px;flex:none;margin:0}
 label.row{display:flex;align-items:center;flex-wrap:nowrap}
 .flink{font-weight:700}
 a.btn{text-decoration:none;display:inline-flex;align-items:center}
+/* κείμενο πάνω από την ερώτηση */
+.pbar{margin-bottom:10px}
+.pbar .pt-toggle{width:100%}
+.pnote{font-size:13.5px;color:#475467;background:#f2f4f8;border-radius:10px;padding:7px 10px;margin-bottom:10px}
+@media(min-width:900px){.pbar .pt-toggle,.pt-close{display:none}.pnote{display:none}}

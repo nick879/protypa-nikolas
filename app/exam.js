@@ -95,6 +95,12 @@ function fmtClock(s) { s = Math.round(s); const h = Math.floor(s / 3600), m = Ma
 /* ---------- Οθόνη εξέτασης ---------- */
 function renderExam() {
   const i = EX.i, q = QBY[EX.qids[i]], n = EX.qids.length, a = EX.ans[q.id] || '';
+  EX.readP = EX.readP || {};
+  if (q.passage && PBY[q.passage] && !EX.readP[q.passage]) {
+    const nq = EX.qids.filter(id => QBY[id] && QBY[id].passage === q.passage).length;
+    const head = `<div class="row" style="justify-content:space-between;align-items:center"><button class="btn ghost sm" onclick="go('mock')">✕ Παύση</button><b class="small">${esc(EX.title)}</b><span class="timer" id="exT">--:--</span></div><div class="mt"></div>`;
+    render(readingHTML(q.passage, nq, `EX.readP['${q.passage}']=1;PASSAGE_OPEN=false;saveRun();renderExam()`, head)); window.scrollTo(0, 0); examTick(); return;
+  }
   const answered = EX.qids.filter(id => EX.ans[id]).length;
   const optsH = EX.mode === 'sheet'
     ? `<div class="opts">${q.options.map(o => `<div class="opt ro"><span class="k">${o.k}</span><span>${esc(o.t)}</span></div>`).join('')}</div>
@@ -102,8 +108,8 @@ function renderExam() {
     : `<div class="opts">${q.options.map(o => `<button class="opt ${a === o.k ? 'sel' : ''}" onclick="exPick('${o.k}')"><span class="k">${o.k}</span><span>${esc(o.t)}</span></button>`).join('')}</div>`;
   render(`<div class="row" style="justify-content:space-between;align-items:center"><button class="btn ghost sm" onclick="go('mock')">✕ Παύση</button><b class="small">${esc(EX.title)}</b><span class="timer" id="exT">--:--</span></div>
     <div class="bar mt"><i style="width:${pct(answered, n)}%"></i></div>
-    <div class="qwrap ${q.passage ? 'withp' : ''} mt">${q.passage ? passageHTML(q.passage, true) : ''}
-      <div class="card"><div class="row" style="justify-content:space-between"><b>Ερώτηση ${z2(EX.nums[i])}</b><span class="tag">${EX.pts[i]} μον.</span></div>
+    <div class="qwrap ${q.passage ? 'withp' : ''} mt">${q.passage ? passageHTML(q.passage) : ''}
+      <div class="card">${passageNote(q)}<div class="row" style="justify-content:space-between"><b>Ερώτηση ${z2(EX.nums[i])}</b><span class="tag">${EX.pts[i]} μον.</span></div>
         <div class="stem mt">${esc(q.stem)}</div>${figHTML(q.figure)}${optsH}
         <div class="row mt" style="justify-content:space-between"><button class="btn ghost sm" ${i ? '' : 'disabled'} onclick="exGo(${i - 1})">← Προηγ.</button>
           <button class="btn ghost sm" onclick="exFlag()">${EX.flags[q.id] ? '🚩 Σημαδεμένη' : '🏳️ Σημάδεψε για μετά'}</button>
@@ -112,7 +118,7 @@ function renderExam() {
       <div class="row mt">${EX.mode === 'sheet' ? `<button class="btn soft sm" onclick="exReview()">📄 Όλο το φύλλο</button>` : ''}<button class="btn sm" onclick="exReview()">Παράδοση</button></div></div>`);
   examTick();
 }
-function exGo(k) { EX.i = k; renderExam(); saveRun(); window.scrollTo(0, 0); }
+function exGo(k) { EX.i = k; PASSAGE_OPEN = false; renderExam(); saveRun(); window.scrollTo(0, 0); }
 function exFlag() { const id = EX.qids[EX.i]; EX.flags[id] = !EX.flags[id]; renderExam(); }
 function exPick(k) { const id = EX.qids[EX.i]; EX.ans[id] = EX.ans[id] === k ? '' : k; if (!EX.ans[id]) delete EX.ans[id]; saveRun(); renderExam(); }
 /* Στο φύλλο: κάθε κύκλος γεμίζει/αδειάζει χωριστά — αν γεμίσει δύο, η ερώτηση μετράει 0 (όπως στην πραγματικότητα). */

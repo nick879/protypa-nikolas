@@ -223,17 +223,29 @@ function startPassage(pid) { const qs = Q.filter(q => q.passage === pid).sort((a
 let QZ = null;
 function startQuiz(list, title, opts) {
   list = list.filter(Boolean); if (!list.length) { toast('Δεν βρέθηκαν ερωτήσεις'); return; }
-  QZ = { list, title, i: 0, answers: {}, start: Date.now(), opts: opts || {}, popen: true };
+  QZ = { list, title, i: 0, answers: {}, start: Date.now(), opts: opts || {}, readP: {} }; PASSAGE_OPEN = false;
   CUR = 'quiz'; history.replaceState(null, '', '#quiz'); renderQuiz();
   LEAVE_GUARD = () => { if (QZ && !QZ.done && Object.keys(QZ.answers).length) finishQuiz(true); QZ = null; return true; };
 }
 VIEWS.quiz = function () { if (!QZ) { go('home'); return; } renderQuiz(); };
-let LASTP = null;
-function passageHTML(pid, coll) {
+/* Κείμενα: πρώτα διαβάζει ολόκληρο το κείμενο («Το διάβασα»), μετά οι ερωτήσεις με το κείμενο
+   μαζεμένο από πάνω, ώστε να το ξανανοίγει όποτε θέλει. Σε μεγάλη οθόνη φαίνεται δίπλα. */
+let PASSAGE_OPEN = false;
+function togglePassage() { PASSAGE_OPEN = !PASSAGE_OPEN; const t = $('.ptxt'); if (t) t.classList.toggle('coll', !PASSAGE_OPEN); const b = $('.pt-toggle'); if (b) b.innerHTML = passageToggleLabel(); if (PASSAGE_OPEN && t) t.scrollIntoView({ behavior: 'smooth', block: 'start' }); }
+function passageToggleLabel() { return PASSAGE_OPEN ? '▲ Κρύψε το κείμενο' : '📖 Ξαναδιάβασε το κείμενο'; }
+function passageBody(p) { return `<div class="lab" style="font-family:Commissioner">${esc(p.year ? 'Κείμενο ' + p.year : 'Κείμενο')}</div><h3 style="font-family:Commissioner;font-size:18px;margin:4px 0 10px">${esc(p.title)}</h3>${p.figure ? figHTML(p.figure) : ''}${paragraphs(p.text)}${p.source ? `<div class="src">${esc(p.source)}</div>` : ''}`; }
+function passageHTML(pid) {
   const p = PBY[pid]; if (!p) return '';
-  const hide = coll && LASTP === pid; LASTP = pid;
-  return `${coll ? `<button class="btn ghost sm pt-toggle" onclick="document.querySelector('.ptxt').classList.toggle('coll')">📖 Δείξε / κρύψε το κείμενο</button>` : ''}
-    <div class="card ptxt ${hide ? 'coll' : ''}"><div class="lab" style="font-family:Commissioner">${esc(p.year ? 'Κείμενο ' + p.year : 'Κείμενο')}</div><h3 style="font-family:Commissioner;font-size:18px;margin:4px 0 10px">${esc(p.title)}</h3>${p.figure ? figHTML(p.figure) : ''}${paragraphs(p.text)}${p.source ? `<div class="src">${esc(p.source)}</div>` : ''}</div>`;
+  return `<div class="pbar"><button class="btn soft sm pt-toggle block" onclick="togglePassage()">${passageToggleLabel()}</button>
+    <div class="card ptxt ${PASSAGE_OPEN ? '' : 'coll'}">${passageBody(p)}<div class="center mt pt-close"><button class="btn ghost sm" onclick="togglePassage()">▲ Κρύψε το κείμενο</button></div></div></div>`;
+}
+function passageNote(q) { return q.passage && PBY[q.passage] ? `<div class="pnote">📖 Η ερώτηση αφορά το κείμενο «${esc(PBY[q.passage].title)}». Μπορείς να το ξαναδιαβάσεις πατώντας «Ξαναδιάβασε το κείμενο».</div>` : ''; }
+// Οθόνη ανάγνωσης: όλο το κείμενο, από την αρχή της σελίδας, και κουμπί «Το διάβασα»
+function readingHTML(pid, nq, onDone, header) {
+  const p = PBY[pid];
+  return `${header}<div class="card notecard"><b>📖 Διάβασε πρώτα όλο το κείμενο.</b><div class="small">Μετά θα απαντήσεις σε ${nq} ${nq === 1 ? 'ερώτηση' : 'ερωτήσεις'} γι' αυτό. Μην ανησυχείς: το κείμενο θα είναι πάντα διαθέσιμο από πάνω, για να το ξαναδιαβάσεις όποτε θέλεις.</div></div>
+    <div class="card ptxt mt">${passageBody(p)}</div>
+    <div class="row mt2" style="justify-content:center"><button class="btn" onclick="${onDone}">✓ Το διάβασα — πάμε στις ερωτήσεις</button></div>`;
 }
 function qBody(q) {
   return `<div class="row" style="margin-bottom:8px">${topicTag(q.topic)}${srcTag(q)}<span class="tag">${'●'.repeat(q.difficulty || 1)}${'○'.repeat(3 - (q.difficulty || 1))}</span></div>
@@ -245,23 +257,30 @@ function explHTML(q, ok) {
     ${THBY[q.topic] ? `<div class="tip"><a href="#" onclick="event.preventDefault();openChapter('${q.topic}')">📘 Θεωρία: ${esc(THBY[q.topic].title)}</a></div>` : ''}
     ${q.file ? `<div class="tip small">📄 Πρωτότυπο: ${fileLink(q.file, FBY[q.file].answers ? 'απαντήσεις' : 'θέματα')}${q.ansFile ? ' · ' + fileLink(q.ansFile, 'απαντήσεις') : ''}</div>` : ''}</div>`;
 }
-function renderQuiz() {
+function renderQuiz(keepScroll) {
   const q = QZ.list[QZ.i], a = QZ.answers[q.id], n = QZ.list.length, done = Object.keys(QZ.answers).length;
   updateTabs();
-  render(`<div class="progress"><button class="btn ghost sm" onclick="go('home')">✕</button><div class="bar"><i style="width:${pct(done, n)}%"></i></div><b class="small">${QZ.i + 1}/${n}</b></div>
-    <div class="small mute" style="margin-bottom:6px">${esc(QZ.title)}</div>
-    <div class="qwrap ${q.passage ? 'withp' : ''}">${q.passage ? passageHTML(q.passage, true) : ''}
-      <div class="card">${qBody(q)}
+  const head = `<div class="progress"><button class="btn ghost sm" onclick="go('home')">✕</button><div class="bar"><i style="width:${pct(done, n)}%"></i></div><b class="small">${QZ.i + 1}/${n}</b></div>
+    <div class="small mute" style="margin-bottom:6px">${esc(QZ.title)}</div>`;
+  QZ.readP = QZ.readP || {};
+  if (q.passage && PBY[q.passage] && !QZ.readP[q.passage] && !a) {
+    const nq = QZ.list.filter(x => x.passage === q.passage).length;
+    render(readingHTML(q.passage, nq, `QZ.readP['${q.passage}']=1;PASSAGE_OPEN=false;renderQuiz()`, head)); window.scrollTo(0, 0); return;
+  }
+  render(`${head}
+    <div class="qwrap ${q.passage ? 'withp' : ''}">${q.passage ? passageHTML(q.passage) : ''}
+      <div class="card">${passageNote(q)}${qBody(q)}
         <div class="opts">${q.options.map(o => { let c = ''; if (a) { if (o.k === q.answer) c = 'ok'; else if (o.k === a) c = 'bad'; } return `<button class="opt ${c}" ${a ? 'disabled' : ''} onclick="answerQuiz('${o.k}')"><span class="k">${o.k}</span><span>${esc(o.t)}</span></button>`; }).join('')}</div>
         ${a ? explHTML(q, a === q.answer) : ''}
         ${a ? `<div class="row mt" style="justify-content:flex-end"><button class="btn" onclick="nextQuiz()">${QZ.i + 1 < n ? 'Επόμενη →' : 'Αποτελέσματα'}</button></div>` : ''}</div></div>`);
+  if (!keepScroll) window.scrollTo(0, 0);
 }
 function answerQuiz(k) {
   const q = QZ.list[QZ.i]; if (QZ.answers[q.id]) return;
-  QZ.answers[q.id] = k; if (canRecord()) { recordAnswer(q, k === q.answer); saveProg(); } renderQuiz();
+  QZ.answers[q.id] = k; if (canRecord()) { recordAnswer(q, k === q.answer); saveProg(); } renderQuiz(true);
   const e = $('.expl'); if (e) e.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 }
-function nextQuiz() { if (QZ.i + 1 < QZ.list.length) { QZ.i++; renderQuiz(); } else finishQuiz(); }
+function nextQuiz() { if (QZ.i + 1 < QZ.list.length) { QZ.i++; PASSAGE_OPEN = false; renderQuiz(); } else finishQuiz(); }
 function finishQuiz(silent) {
   const ans = QZ.answers, ids = Object.keys(ans); const c = ids.filter(id => ans[id] === QBY[id].answer).length; const sec = (Date.now() - QZ.start) / 1000;
   QZ.done = true; LEAVE_GUARD = null;
