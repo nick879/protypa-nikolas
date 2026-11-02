@@ -85,7 +85,7 @@ function emptyProg() { return { qs: {}, xp: 0, games: {}, lessons: {}, tests: {}
 function startListeners() {
   unsubs.forEach(u => u()); unsubs = [];
   const onErr = e => { console.warn(e); if (e.code === 'permission-denied') { render(`<div class="card mt2"><h3>Δεν υπάρχει πρόσβαση</h3><p>Οι κανόνες της βάσης δεν επιτρέπουν σε αυτόν τον λογαριασμό να δει τα δεδομένα. Ο γονιός πρέπει να ενημερώσει τους κανόνες στο Firebase (δες το README).</p><button class="btn" onclick="logout()">Αποσύνδεση</button></div>`); } };
-  unsubs.push(FB.onSnapshot(R.prog(), s => { PROG_SERVER = Object.assign(emptyProg(), s.exists() ? s.data() : {}); if (!progDirty && !STUDENT_PREVIEW) { PROG = JSON.parse(JSON.stringify(PROG_SERVER)); softRefresh(); } }, onErr));
+  unsubs.push(FB.onSnapshot(R.prog(), s => { PROG_SERVER = Object.assign(emptyProg(), s.exists() ? s.data() : {}); if (PROG_SERVER.resetAt && PROG && (PROG.resetAt || 0) < PROG_SERVER.resetAt) { progDirty = false; clearTimeout(progTimer); IDB.put('exam-run', null); } if (!progDirty && !STUDENT_PREVIEW) { PROG = JSON.parse(JSON.stringify(PROG_SERVER)); softRefresh(); } }, onErr));
   unsubs.push(FB.onSnapshot(R.set(), s => { SET = s.exists() ? s.data() : {}; softRefresh(); }, onErr));
   const q = (n, lim) => FB.query(R.col(n), FB.orderBy('ts', 'desc'), FB.limit(lim));
   unsubs.push(FB.onSnapshot(q('sessions', 500), s => { SESS = s.docs.map(d => ({ id: d.id, ...d.data() })); softRefresh(); }, onErr));

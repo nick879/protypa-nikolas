@@ -167,6 +167,8 @@ VIEWS['p-settings'] = function () {
     <h2 id="ordEd">Σειρά κεφαλαίων</h2><div id="ordBox">${orderEditorHTML()}</div>
     <h2>Περιεχόμενο</h2><div class="card small">Έκδοση <b>${C.version}</b> · ${Q.length} ερωτήσεις (${Q.filter(q => q.kind === 'exam').length} από εξετάσεις, ${Q.filter(q => q.kind === 'indicative' || q.kind === 'collection').length} ενδεικτικές, ${Q.filter(q => q.kind === 'new').length} νέες εξάσκησης) · ${C.passages.length} κείμενα · ${C.theory.length} κεφάλαια θεωρίας.
       <div class="mt">Το νέο περιεχόμενο κατεβαίνει μόνο του όταν ανοίγει η εφαρμογή· η πρόοδος δεν χάνεται.</div><button class="btn sm ghost mt" onclick="checkRemoteContent().then(()=>toast('Έγινε έλεγχος'))">⟳ Έλεγχος τώρα</button></div>
+    <h2>Μηδενισμός</h2><div class="card small"><p style="margin-top:0">Σβήνει <b>όλη την πρόοδο</b> του Νικόλα (απαντήσεις, μαθήματα, τεστ, διαγωνίσματα, ιστορικό, αναθέσεις, σημειώσεις, «κάναμε μάθημα») και το πρόγραμμα ξεκινά από σήμερα. Η σειρά κεφαλαίων, η ημερομηνία εξέτασης και οι υπόλοιπες ρυθμίσεις μένουν. Δεν αναιρείται.</p>
+      <button class="btn danger" onclick="resetAskAll()">🗑 Μηδενισμός προόδου</button></div>
     <h2>Λογαριασμός</h2><div class="card"><div class="small">${esc(USER.name)} · ${esc(USER.email)}</div><div class="row mt"><button class="btn soft" onclick="togglePreview()">👀 Δες την εφαρμογή όπως ο Νικόλας</button><button class="btn danger" onclick="logout()">Αποσύνδεση</button></div></div>`);
 };
 function assignWrong(sid) {
@@ -194,3 +196,24 @@ function moveOrd(i, d) { const j = i + d; [ORD[i], ORD[j]] = [ORD[j], ORD[i]]; r
 // Σταθερή ταξινόμηση: τα διδαγμένα μπαίνουν πρώτα, κρατώντας μεταξύ τους τη σχετική σειρά (άρα και την εναλλαγή Γλώσσα/Μαθηματικά)
 function taughtFirst() { ORD = [...ORD.filter(id => TAUGHT[id]), ...ORD.filter(id => !TAUGHT[id])]; refreshOrd(); }
 function saveOrd() { setSettings({ chapterOrder: ORD, taught: TAUGHT }); ORD = null; setTimeout(refreshOrd, 400); }
+
+/* ---------- Μηδενισμός ---------- */
+function resetAskAll() {
+  modal(`<h3 style="margin-top:0">Μηδενισμός όλης της προόδου</h3><p class="small">Θα σβηστούν οριστικά όλα τα δεδομένα προόδου του Νικόλα και το πρόγραμμα θα ξεκινήσει από σήμερα (${fmtDate(new Date(), { day: 'numeric', month: 'long' })}). Γράψε <b>ΜΗΔΕΝΙΣΜΟΣ</b> για επιβεβαίωση.</p>
+    <div class="field"><input type="text" id="rsT" autocomplete="off"></div>
+    <div class="row" style="justify-content:flex-end"><button class="btn ghost" onclick="closeModal()">Άκυρο</button><button class="btn danger" onclick="if($('#rsT').value.trim().normalize('NFD').replace(/[\u0300-\u036f]/g,'').toUpperCase()==='ΜΗΔΕΝΙΣΜΟΣ')resetAll();else toast('Γράψε ΜΗΔΕΝΙΣΜΟΣ')">Μηδενισμός</button></div>`);
+}
+async function resetAll() {
+  closeModal(); toast('Μηδενισμός…', 5000);
+  try {
+    for (const name of ['sessions', 'mocks', 'tasks', 'notes', 'lessons']) {
+      const snap = await FB.getDocs(R.col(name)); let batch = FB.writeBatch(db), n = 0;
+      for (const d of snap.docs) { batch.delete(d.ref); if (++n % 400 === 0) { await batch.commit(); batch = FB.writeBatch(db); } }
+      await batch.commit();
+    }
+    await FB.setDoc(R.prog(), Object.assign(emptyProg(), { updatedAt: Date.now(), resetAt: Date.now() }));
+    await FB.setDoc(R.set(), { planStart: todayStr(), currentChapter: null }, { merge: true });
+    await IDB.put('exam-run', null);
+    toast('Έγινε! Όλα ξεκινούν από σήμερα.', 4000); go('home');
+  } catch (e) { toast('Σφάλμα: ' + e.message, 6000); }
+}
