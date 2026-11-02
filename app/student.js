@@ -11,8 +11,7 @@ function topicTag(t) { const tp = TOP[t]; return tp ? `<span class="tag ${tp.sub
 VIEWS.home = function () {
   const name = USER.vocative || USER.name;
   const days = daysToExam(); const goal = SET.dailyMin || 25; const today = secondsOn(todayStr()) / 60;
-  const wk = currentWeek(); const t = parseDay(todayStr());
-  const tasksToday = wk ? dayTasks(wk, t) : [['🧠', 'Έξυπνη εξάσκηση', 'smart']];
+  const tasksToday = todayTasks(); const P = planInfo();
   const open = TASKS.filter(x => x.status !== 'done');
   const unread = NOTES.filter(n => !n.seen);
   const ch = currentChapter(); const cp = chapterProgress(ch);
@@ -31,6 +30,7 @@ VIEWS.home = function () {
       </div>
       <div class="bar mt" style="background:rgba(255,255,255,.25)"><i style="width:${Math.min(100, pct(today, goal))}%;background:#fff"></i></div>
       <div class="row mt">${tasksToday.filter(x => x[2]).map(x => `<button class="btn sm" style="background:#fff;color:var(--acc)" onclick="doAction('${x[2]}')">Ξεκίνα</button>`).join('')}<button class="btn sm" style="background:rgba(255,255,255,.18)" onclick="go('plan')">📅 Πρόγραμμα</button></div>
+      <div class="small mt" style="opacity:.9">${kidStatus(P)}</div>
     </div>
     <h2>Το κεφάλαιο που δουλεύεις</h2>
     <button class="tile" onclick="openChapter('${ch}')" style="width:100%">${topicTag(ch)}<b>${esc(THBY[ch] ? THBY[ch].title : TOP[ch].name)}</b>
@@ -60,26 +60,42 @@ VIEWS.notes = function () {
 };
 
 /* ---------- Πρόγραμμα ---------- */
+function kidStatus(P) {
+  return { ahead: '🚀 Πας πιο γρήγορα από το πρόγραμμα. Μπράβο!', ontrack: '✅ Είσαι ακριβώς στον στόχο.', behind: '💪 Λίγο πίσω: λίγα λεπτά παραπάνω αυτή την εβδομάδα και τα προλαβαίνουμε.', done: '🏁 Τελείωσες όλη τη θεωρία!', notstarted: '' }[P.status];
+}
+function chapterDoneDate(id) { const th = THBY[id]; let ts = 0; (th ? th.lessons : []).forEach(l => { const d = (PROG.lessons || {})[l.id]; if (d) ts = Math.max(ts, d.ts); }); const t = (PROG.tests || {})[id]; if (t) ts = Math.max(ts, t.bestTs || t.ts); return ts; }
+function planChaptersHTML(P, forParent) {
+  const cur = currentChapter(); const short = { day: 'numeric', month: 'short' };
+  return P.sched.map((c, i) => { const u = chapterUnits(c.id), d = chapterUnitsDone(c.id); const isCur = c.id === cur;
+    const icon = c.state === 'done' ? '<span class="chk on">✓</span>' : isCur ? '<span class="chk" style="border-color:var(--acc);color:var(--acc)">▶</span>' : '<span class="chk"></span>';
+    const when = c.state === 'done' ? `ολοκληρώθηκε ${fmtDate(chapterDoneDate(c.id), short)}` : c.eta ? `εκτίμηση: ως ${fmtDate(c.eta, short)}` : '';
+    const late = forParent && c.state !== 'done' && c.eta && c.eta > P.theoryEnd;
+    return `<div class="list-item">${icon}<span class="grow"><b>${i + 1}. ${esc(TOP[c.id].name)}</b> <span class="small mute">${SUBJ[TOP[c.id].subject]}${(SET.taught || {})[c.id] ? ' · διδάχθηκε' : ''}</span><div class="small ${late ? '' : 'mute'}" ${late ? 'style="color:var(--bad)"' : ''}>${d}/${u} βήματα · ${when}${late ? ' (μετά την προθεσμία)' : ''}</div><div class="bar"><i style="width:${pct(d, u)}%;background:var(--${TOP[c.id].subject})"></i></div></span>${!forParent ? `<button class="btn sm ${isCur ? '' : 'ghost'}" onclick="openChapter('${c.id}')">${c.state === 'done' ? 'Ξανά' : 'Άνοιγμα'}</button>` : `<button class="btn sm ghost" onclick="go('chapter','${c.id}')">Άνοιγμα</button>`}</div>`; }).join('');
+}
+function phasesHTML(P) {
+  const f = d => fmtDate(d, { day: 'numeric', month: 'short' });
+  const rows = [[1, P.start, P.theoryEnd], [2, P.theoryEnd, P.mockStart], [3, P.mockStart, P.finalStart], [4, P.finalStart, P.exam]];
+  return rows.map(([k, a, b]) => `<div class="week ${P.phase === k ? 'now' : P.phase > k ? 'past' : ''}" style="border-left-color:${PHASES[k].c}"><b style="color:${PHASES[k].c}">${k}. ${PHASES[k].n}</b> <span class="small mute">${f(a)} – ${f(b)}${P.phase === k ? ' · τώρα' : ''}</span><div class="small mute">${PHASES[k].d}</div></div>`).join('');
+}
 VIEWS.plan = function () {
-  const weeks = planWeeks(); const t = parseDay(todayStr()); const goal = SET.dailyMin || 25; let last = 0;
-  render(`<h1>Πρόγραμμα μελέτης</h1><p class="sub">Ως την εξέταση (${fmtDate(parseDay(examDate()), { day: 'numeric', month: 'long', year: 'numeric' })}), περίπου ${goal}′ τη μέρα. Το ✓ μπαίνει μόνο του όταν φτάνεις τον στόχο.</p>
-    <div class="grid g4">${Object.entries(PHASES).map(([k, v]) => `<div class="card" style="border-top:4px solid ${v.c}"><b>${k}. ${v.n}</b><div class="small mute">${v.d}</div></div>`).join('')}</div>
-    <div class="mt">${weeks.map(wk => {
-      const head = wk.phase !== last ? `<h2 style="color:${PHASES[wk.phase].c}">Φάση ${wk.phase}: ${PHASES[wk.phase].n}</h2>` : ''; last = wk.phase;
-      const now = t >= wk.start && t <= wk.end, past = wk.end < t;
-      const days = [...Array(7)].map((_, i) => new Date(wk.start.getTime() + i * DAYMS)).filter(d => d <= parseDay(examDate()));
-      return head + `<div class="week ${now ? 'now' : ''} ${past ? 'past' : ''}"><b>${fmtDate(wk.start, { day: 'numeric', month: 'short' })} – ${fmtDate(wk.end, { day: 'numeric', month: 'short' })}</b>${wk.chapters ? ` <span class="small mute">· ${wk.chapters.map(c => TOP[c].name).join(', ')}</span>` : ''}
-        ${!past ? `<div class="card" style="padding:8px 12px;margin-top:6px">${days.map(d => { const ds = todayStr(d); const m = secondsOn(ds) / 60; const ok = m >= goal * .8; const isT = ds === todayStr(); const tk = dayTasks(wk, d);
-          return `<div class="day ${isT ? 'today' : ''}"><span class="chk ${ok ? 'on' : ''}">${ok ? '✓' : ''}</span><span class="d">${DOW[d.getDay()]} ${d.getDate()}/${d.getMonth() + 1}</span><span class="grow">${tk.map(x => x[0] + ' ' + esc(x[1])).join('<br>')}</span>${isT && tk[0][2] ? `<button class="btn sm" onclick="doAction('${tk[0][2]}')">Πάμε</button>` : ''}</div>`; }).join('')}</div>` : ''}</div>`;
-    }).join('')}<div class="week"><b>🎯 ${fmtDate(parseDay(examDate()), { weekday: 'long', day: 'numeric', month: 'long' })}: Εξέταση</b><div class="small mute">Είσοδος ως τις ${C.exam.arrive}, έναρξη ${C.exam.start}.</div></div></div>`);
+  const P = planInfo(); const goal = SET.dailyMin || 25; const t = parseDay(todayStr());
+  const mon = addDays(t, -((t.getDay() + 6) % 7));
+  render(`<h1>Πρόγραμμα μελέτης</h1><p class="sub">Προχωράς με τον δικό σου ρυθμό: μόλις κλείσεις ένα κεφάλαιο (όλα τα μαθήματα + τεστ ${PASS}%), ανοίγει το επόμενο.</p>
+    <div class="card"><b>${kidStatus(P) || 'Ξεκινάμε!'}</b><div class="bar mt"><i style="width:${pct(P.done, P.total)}%"></i></div><div class="small mute mt">Θεωρία: ${P.done}/${P.total} βήματα · στόχος να τελειώσει ως ${fmtDate(P.theoryEnd, { day: 'numeric', month: 'long' })}</div></div>
+    <h2>Αυτή την εβδομάδα</h2><div class="card" style="padding:8px 12px">${[...Array(7)].map((_, i) => { const d = addDays(mon, i); const ds = todayStr(d); const m = secondsOn(ds) / 60; const ok = m >= goal * .8; const isT = ds === todayStr(); const fut = d > t;
+      const tk = isT ? todayTasks(d) : [];
+      return `<div class="day ${isT ? 'today' : ''}"><span class="chk ${ok ? 'on' : ''}">${ok ? '✓' : ''}</span><span class="d">${DOW[d.getDay()]} ${d.getDate()}/${d.getMonth() + 1}</span><span class="grow small">${isT ? tk.map(x => x[0] + ' ' + esc(x[1])).join('<br>') : fut ? '<span class="mute">—</span>' : `<span class="mute">${Math.round(m)}′</span>`}</span>${isT && tk[0] && tk[0][2] ? `<button class="btn sm" onclick="doAction('${tk[0][2]}')">Πάμε</button>` : ''}</div>`; }).join('')}</div>
+    <h2>Κεφάλαια με τη σειρά</h2><div class="card">${planChaptersHTML(P, false)}</div>
+    <h2>Φάσεις ως την εξέταση</h2>${phasesHTML(P)}
+    <div class="week"><b>🎯 ${fmtDate(P.exam, { weekday: 'long', day: 'numeric', month: 'long' })}: Εξέταση</b><div class="small mute">Είσοδος ως τις ${C.exam.arrive}, έναρξη ${C.exam.start}.</div></div>`);
 };
 
 /* ---------- Κεφάλαια & θεωρία ---------- */
 VIEWS.chapters = function () {
   const ch = currentChapter();
   const card = id => { const th = THBY[id]; const p = chapterProgress(id);
-    return `<button class="tile" onclick="openChapter('${id}')" style="${id === ch ? 'outline:3px solid var(--acc)' : ''}">${topicTag(id)}<b>${esc(th ? th.title : TOP[id].name)}</b>
-      <span class="small mute">Μαθήματα ${p.lessonsDone}/${p.lessons}${p.test ? ` · τεστ ${p.test.score}%` : ''}${p.stats.acc !== null ? ` · ${Math.round(p.stats.acc * 100)}% σωστά` : ''}</span><div class="bar"><i style="width:${pct(p.lessonsDone, p.lessons)}%;background:var(--${TOP[id].subject})"></i></div></button>`; };
+    return `<button class="tile" onclick="openChapter('${id}')" style="${id === ch ? 'outline:3px solid var(--acc)' : ''}">${topicTag(id)}<b>${chapterDone(id) ? '✓ ' : ''}${esc(th ? th.title : TOP[id].name)}</b>
+      <span class="small mute">Μαθήματα ${p.lessonsDone}/${p.lessons}${p.test ? ` · τεστ ${bestTest(id)}%` : ''}${p.stats.acc !== null ? ` · ${Math.round(p.stats.acc * 100)}% σωστά` : ''}</span><div class="bar"><i style="width:${pct(p.lessonsDone, p.lessons)}%;background:var(--${TOP[id].subject})"></i></div></button>`; };
   render(`<h1>Κεφάλαια</h1><p class="sub">Η θεωρία που χρειάζεσαι, με λυμένα παραδείγματα από τις εξετάσεις. Με μπλε περίγραμμα: το κεφάλαιο που δουλεύεις τώρα.</p>
     <h2>Γλώσσα</h2><div class="grid g3">${C.topics.filter(t => t.subject === 'lang').map(t => card(t.id)).join('')}</div>
     <h2>Μαθηματικά</h2><div class="grid g3">${C.topics.filter(t => t.subject === 'math').map(t => card(t.id)).join('')}</div>
@@ -105,7 +121,8 @@ VIEWS.chapter = function (id) {
   const th = THBY[id]; if (!th) { go('chapters'); return; }
   const p = chapterProgress(id);
   render(`<button class="btn ghost sm" onclick="go('chapters')">← Κεφάλαια</button>
-    <h1 class="mt">${esc(th.title)}</h1><div class="row">${topicTag(id)}<span class="small mute">Μαθήματα ${p.lessonsDone}/${p.lessons}${p.test ? ` · τελευταίο τεστ ${p.test.score}%` : ''}</span></div>
+    <h1 class="mt">${esc(th.title)}</h1><div class="row">${topicTag(id)}<span class="small mute">Μαθήματα ${p.lessonsDone}/${p.lessons}${p.test ? ` · τεστ: καλύτερο ${bestTest(id)}%` : ''}</span>${chapterDone(id) ? '<span class="tag new">✓ ολοκληρώθηκε</span>' : ''}</div>
+    <div class="small mute">Το κεφάλαιο κλείνει όταν κάνεις όλα τα μαθήματα και πάρεις τουλάχιστον ${PASS}% στο τεστ κεφαλαίου.</div>
     <p>${md(th.intro || '')}</p>
     <h2>Μαθήματα</h2><div class="card">${th.lessons.map((l, i) => { const done = (PROG.lessons || {})[l.id]; return `<div class="list-item"><span class="chk ${done ? 'on' : ''}">${done ? '✓' : ''}</span><span class="grow"><b>${i + 1}. ${esc(l.title)}</b>${done ? `<div class="small mute">έγινε ${fmtDate(done.ts, { day: 'numeric', month: 'short' })}${done.score !== undefined ? ` · έλεγχος ${done.score}%` : ''}</div>` : ''}</span><button class="btn sm ${done ? 'ghost' : ''}" onclick="openLesson('${l.id}')">${done ? 'Ξανά' : 'Ξεκίνα'}</button></div>`; }).join('')}</div>
     <div class="row mt"><button class="btn" onclick="startChapterTest('${id}')">📝 Τεστ κεφαλαίου (15 ερωτήσεις)</button><button class="btn ghost" onclick="startTopic('${id}')">✏️ Εξάσκηση 10 ερωτήσεων</button></div>
@@ -172,7 +189,7 @@ function startCustom() { startQuiz(orderFresh(practicePool()).slice(0, PS.n), '�
 function startTopic(t) { startQuiz(orderFresh(Q.filter(q => q.topic === t)).slice(0, 10), 'Εξάσκηση: ' + TOP[t].name, { topic: t }); }
 function startChapterTest(t) {
   const pool = orderFresh(Q.filter(q => q.topic === t && q.kind !== 'new')).concat(orderFresh(Q.filter(q => q.topic === t && q.kind === 'new')));
-  startQuiz(pool.slice(0, 15), 'Τεστ κεφαλαίου: ' + TOP[t].name, { mode: 'chapter-test', topic: t, onDone: (n, c) => { PROG.tests = PROG.tests || {}; PROG.tests[t] = { score: pct(c, n), ts: Date.now(), n }; saveProg(); } });
+  startQuiz(pool.slice(0, 15), 'Τεστ κεφαλαίου: ' + TOP[t].name, { mode: 'chapter-test', topic: t, onDone: (n, c) => { PROG.tests = PROG.tests || {}; const prev = PROG.tests[t] || {}; const sc = pct(c, n); const best = Math.max(sc, prev.best || prev.score || 0); PROG.tests[t] = { score: sc, ts: Date.now(), n, best, bestTs: best === sc ? Date.now() : (prev.bestTs || prev.ts), tries: (prev.tries || 0) + 1 }; saveProg(); if (sc >= PASS) toast('🎉 Πέρασες το τεστ! Το κεφάλαιο ολοκληρώθηκε.', 4000); else toast(`Χρειάζεσαι ${PASS}% για να κλείσει το κεφάλαιο. Ξαναδοκίμασε μετά από εξάσκηση!`, 4500); } });
 }
 function startMistakes() { const arr = shuffle(Q.filter(q => PROG.qs[q.id] && PROG.qs[q.id][4] === 0)).slice(0, 10); if (!arr.length) { toast('Δεν έχεις λάθη για επανάληψη 🎉'); return; } startQuiz(arr, 'Τα λάθη μου', { mode: 'mistakes' }); }
 function startSmart() {

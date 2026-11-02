@@ -142,53 +142,100 @@ function logSession(o) {
   return s;
 }
 
-/* ---------- Πρόγραμμα μελέτης ---------- */
-function planWeeks() {
-  const exam = parseDay(examDate()); const today = parseDay(todayStr());
-  const start0 = SET.planStart ? parseDay(SET.planStart) : parseDay('2026-11-02');
-  let start = new Date(Math.min(start0, today)); start.setDate(start.getDate() - ((start.getDay() + 6) % 7));
-  const weeks = []; let w = new Date(start);
-  const total = Math.max(1, Math.round((exam - start) / (7 * DAYMS)));
-  const ph1 = Math.min(14, Math.max(6, Math.round(total * .5)));
-  let i = 0;
-  while (w <= exam && i < 80) {
-    const daysLeft = (exam - w) / DAYMS; let phase;
-    if (daysLeft <= 7) phase = 4; else if (i < ph1) phase = 1; else if (daysLeft <= 50) phase = 3; else phase = 2;
-    const wk = { start: new Date(w), end: new Date(w.getTime() + 6 * DAYMS), phase, idx: i };
-    if (phase === 1) {
-      const per = 14 / ph1; const a = Math.floor(i * per), b = Math.max(a + 1, Math.floor((i + 1) * per));
-      wk.chapters = CHAPTER_ORDER.slice(a, Math.min(b, 14));
-    }
-    weeks.push(wk); w = new Date(w.getTime() + 7 * DAYMS); i++;
-  }
-  return weeks;
+/* ---------- Πρόγραμμα μελέτης (δυναμικό) ----------
+   Το πρόγραμμα δεν είναι δεμένο με εβδομάδες: ο Νικόλας προχωρά στο επόμενο κεφάλαιο μόλις «κλείσει» το τρέχον
+   (όλα τα μαθήματα θεωρίας + τεστ κεφαλαίου ≥ PASS%). Οι ημερομηνίες χρησιμοποιούνται μόνο για να συγκρίνουμε
+   τον πραγματικό ρυθμό με τον αναμενόμενο (μπροστά / στον στόχο / πίσω). */
+const PASS = 70;
+const DEFAULT_START = '2026-11-02';
+// Προτεινόμενη σειρά «πριν από»: μόνο για προειδοποίηση στον γονέα, δεν μπλοκάρει τίποτα.
+const CH_DEPS = { 'μθ-κλάσματα': ['μθ-αριθμοί'], 'μθ-ποσοστά': ['μθ-κλάσματα'], 'μθ-εξισώσεις': ['μθ-αριθμοί'], 'γλ-σύνταξη': ['γλ-γραμματική'] };
+function chapterOrder() {
+  const o = (SET.chapterOrder || []).filter(id => TOP[id]);
+  CHAPTER_ORDER.forEach(id => { if (!o.includes(id)) o.push(id); });
+  C.topics.forEach(t => { if (!o.includes(t.id)) o.push(t.id); });
+  return o;
 }
-const PHASES = { 1: { n: 'Θεωρία & κεφάλαια', c: '#2f5bd3', d: 'Κάθε εβδομάδα ένα–δύο κεφάλαια: θεωρία, λυμένα παραδείγματα, ερωτήσεις ελέγχου, τεστ κεφαλαίου.' }, 2: { n: 'Εξάσκηση', c: '#7a3fd1', d: 'Επίσημα θέματα ανά ενότητα, κείμενα, έμφαση στις αδύναμες ενότητες, μισό διαγώνισμα κάθε 2 εβδομάδες.' }, 3: { n: 'Διαγωνίσματα', c: '#0b8a6b', d: 'Πλήρες διαγώνισμα με φύλλο απαντήσεων κάθε Σάββατο 10:00 και διόρθωση την Κυριακή.' }, 4: { n: 'Τελική ευθεία', c: '#d1493f', d: 'Ελαφριά επανάληψη, ξεκούραση, ύπνος.' } };
-function currentWeek() { const t = parseDay(todayStr()); return planWeeks().find(w => t >= w.start && t <= w.end); }
+function bestTest(id) { const t = (PROG.tests || {})[id]; return t ? Math.max(t.best || 0, t.score || 0) : null; }
+function chapterUnits(id) { const th = THBY[id]; return (th ? th.lessons.length : 0) + 1; } // μαθήματα + τεστ
+function chapterUnitsDone(id) { const p = chapterProgress(id); const b = bestTest(id); return p.lessonsDone + (b !== null && b >= PASS ? 1 : 0); }
+function chapterDone(id) { return chapterUnitsDone(id) >= chapterUnits(id); }
+function chapterState(id) { if (chapterDone(id)) return 'done'; return chapterUnitsDone(id) > 0 || (PROG.tests || {})[id] ? 'started' : 'todo'; }
+// Το επόμενο βήμα μέσα σε ένα κεφάλαιο
+function chapterNextStep(id) {
+  const th = THBY[id]; const l = th && th.lessons.find(x => !(PROG.lessons || {})[x.id]);
+  if (l) return { kind: 'lesson', icon: '📘', text: `Θεωρία: ${TOP[id].name} — «${l.title}»`, action: 'lesson:' + l.id };
+  const t = (PROG.tests || {})[id];
+  if (!t) return { kind: 'test', icon: '📝', text: `Τεστ κεφαλαίου: ${TOP[id].name}`, action: 'test:' + id };
+  return { kind: 'retest', icon: '🔁', text: `${TOP[id].name}: εξάσκηση στα λάθη και νέο τεστ (θέλει ${PASS}%, έχεις ${bestTest(id)}%)`, action: 'topic:' + id, then: 'test:' + id };
+}
+function addDays(d, n) { return new Date(d.getTime() + n * DAYMS); }
+function planInfo() {
+  const today = parseDay(todayStr());
+  const exam = parseDay(examDate());
+  const start = parseDay(SET.planStart || DEFAULT_START);
+  const tw = SET.theoryWeeks || 12;                       // η θεωρία κλείνει tw εβδομάδες πριν την εξέταση
+  const theoryEnd = addDays(exam, -7 * tw);
+  const mockStart = addDays(exam, -7 * 6), finalStart = addDays(exam, -7);
+  const order = chapterOrder();
+  const total = order.reduce((a, id) => a + chapterUnits(id), 0);
+  const done = order.reduce((a, id) => a + chapterUnitsDone(id), 0);
+  const theoryDays = Math.max(7, (theoryEnd - start) / DAYMS);
+  const elapsed = Math.max(0, Math.min(theoryDays, (today - start) / DAYMS + 1));
+  const expected = total * elapsed / theoryDays;
+  const perDay = total / theoryDays;                        // αναμενόμενος ρυθμός (μονάδες/μέρα)
+  const deltaDays = Math.round((done - expected) / perDay);  // + μπροστά, − πίσω
+  const theoryDone = done >= total;
+  let status = theoryDone ? 'done' : deltaDays >= 4 ? 'ahead' : deltaDays <= -4 ? 'behind' : 'ontrack';
+  if (today < start) status = 'notstarted';
+  // Πρόβλεψη τέλους θεωρίας με τον πραγματικό ρυθμό (μετά από τουλάχιστον 10 μέρες)
+  const daysIn = (today - start) / DAYMS + 1; let projected = null;
+  if (!theoryDone && daysIn >= 10 && done > 0) projected = addDays(today, Math.ceil((total - done) / (done / daysIn)));
+  let phase;
+  if (today >= finalStart) phase = 4; else if (today >= mockStart) phase = 3; else if (theoryDone || today >= theoryEnd) phase = 2; else phase = 1;
+  // Χρονοδιάγραμμα κεφαλαίων: τα τελειωμένα με την ημερομηνία τους, τα υπόλοιπα με τον ρυθμό που χρειάζεται για να τελειώσουν στην ώρα τους
+  const left = Math.max(1, (theoryEnd - today) / DAYMS); const need = (total - done) / left;
+  let cursor = 0; const sched = order.map(id => {
+    const u = chapterUnits(id) - chapterUnitsDone(id);
+    const s = { id, state: chapterState(id) };
+    if (u > 0) { cursor += u; s.eta = addDays(today, Math.ceil(cursor / Math.max(need, perDay))); }
+    return s;
+  });
+  return { today, exam, start, theoryEnd, mockStart, finalStart, order, total, done, expected, deltaDays, status, projected, phase, sched, need, perDay };
+}
+const STATUS_TXT = {
+  ahead: ['🚀', 'Μπροστά από το πρόγραμμα', 'var(--ok)'], ontrack: ['✅', 'Στον στόχο', 'var(--ok)'],
+  behind: ['⚠️', 'Πίσω από το πρόγραμμα', 'var(--bad)'], done: ['🏁', 'Η θεωρία ολοκληρώθηκε', 'var(--ok)'], notstarted: ['⏳', 'Δεν ξεκίνησε ακόμα', 'var(--mute)']
+};
+function statusLine(P) {
+  const [ic, t] = STATUS_TXT[P.status];
+  const d = Math.abs(P.deltaDays);
+  return `${ic} ${t}${P.status === 'ahead' || P.status === 'behind' ? ` κατά ~${d} ${d === 1 ? 'μέρα' : 'μέρες'}` : ''}`;
+}
+const PHASES = { 1: { n: 'Θεωρία & κεφάλαια', c: '#2f5bd3', d: 'Ένα κεφάλαιο τη φορά: μαθήματα θεωρίας, ερωτήσεις ελέγχου, τεστ κεφαλαίου. Μόλις κλείσει ένα, ανοίγει το επόμενο.' }, 2: { n: 'Εξάσκηση', c: '#7a3fd1', d: 'Επίσημα θέματα ανά ενότητα, κείμενα, έμφαση στις αδύναμες ενότητες, μισό διαγώνισμα κάθε 2 εβδομάδες.' }, 3: { n: 'Διαγωνίσματα', c: '#0b8a6b', d: 'Πλήρες διαγώνισμα με φύλλο απαντήσεων κάθε Σάββατο 10:00 και διόρθωση την Κυριακή.' }, 4: { n: 'Τελική ευθεία', c: '#d1493f', d: 'Ελαφριά επανάληψη, ξεκούραση, ύπνος.' } };
 function currentChapter() {
-  if (SET.currentChapter && THBY[SET.currentChapter]) return SET.currentChapter;
-  const wk = currentWeek(); if (wk && wk.chapters && wk.chapters.length) {
-    const notDone = wk.chapters.find(c => { const p = chapterProgress(c); return p.lessonsDone < p.lessons; });
-    return notDone || wk.chapters[wk.chapters.length - 1];
-  }
-  const first = CHAPTER_ORDER.find(c => { const p = chapterProgress(c); return p.lessonsDone < p.lessons; });
-  return first || CHAPTER_ORDER[0];
+  if (SET.currentChapter && THBY[SET.currentChapter] && !chapterDone(SET.currentChapter)) return SET.currentChapter;
+  const o = chapterOrder();
+  // Ένα κεφάλαιο που έχει ξεκινήσει ολοκληρώνεται πρώτα, ακόμα κι αν αλλάξει η σειρά.
+  return o.find(id => chapterState(id) === 'started') || o.find(id => !chapterDone(id)) || o[o.length - 1];
 }
-function dayTasks(wk, date) {
-  const dow = date.getDay(); const T = [];
-  if (wk.phase === 1) {
-    const chs = wk.chapters || []; const ch = chs[(dow + 1) % Math.max(1, chs.length)] || chs[0];
-    const name = ch ? TOP[ch].name : '';
-    if (dow === 0) T.push(['🎮', 'Παιχνίδια + «Τα λάθη μου»', 'mistakes']);
-    else if (dow === 6) T.push(['📝', `Τεστ κεφαλαίου: ${name}`, 'test:' + ch]);
-    else if (dow === 5) T.push(['✏️', `Εξάσκηση: ${name} (10 ερωτήσεις)`, 'topic:' + ch]);
-    else T.push(['📘', `Θεωρία: ${name} — επόμενο μάθημα`, 'chapter:' + ch]);
-  } else if (wk.phase === 2) {
-    if (dow === 6 && wk.idx % 2 === 0) T.push(['⏱️', 'Μισό διαγώνισμα (75′)', 'mock']);
+// Εργασίες της ημέρας: βγαίνουν από την κατάσταση (τι έχει τελειώσει), όχι από σταθερό ημερολόγιο.
+function todayTasks(date) {
+  date = date || parseDay(todayStr()); const P = planInfo(); const dow = date.getDay(); const T = [];
+  const anyDone = P.order.some(chapterDone);
+  if (P.phase === 1 || (P.phase === 2 && P.status !== 'done' && P.done < P.total)) {
+    const ch = currentChapter(); const st = chapterNextStep(ch);
+    if (dow === 0) T.push(['🎮', 'Ελαφριά μέρα: παιχνίδια + «Τα λάθη μου»', 'mistakes']);
+    else if (dow === 3 && anyDone) { T.push([st.icon, st.text, st.action]); T.push(['🧠', 'Επανάληψη παλιών κεφαλαίων (10 ερωτήσεις)', 'smart']); }
+    else T.push([st.icon, st.text, st.action]);
+    if (P.phase === 2) T.push(['🧠', 'Έξυπνη εξάσκηση', 'smart']);
+  } else if (P.phase === 2) {
+    const wk = Math.floor((date - P.theoryEnd) / (7 * DAYMS));
+    if (dow === 6 && wk % 2 === 0) T.push(['⏱️', 'Μισό διαγώνισμα (75′)', 'mock']);
     else if (dow === 6 || dow === 3) T.push(['📖', 'Ένα κείμενο Γλώσσας', 'reading']);
     else if (dow === 0) T.push(['🔁', 'Τα λάθη μου + παιχνίδια', 'mistakes']);
     else T.push(['🧠', 'Έξυπνη εξάσκηση (αδύναμες ενότητες)', 'smart']);
-  } else if (wk.phase === 3) {
+  } else if (P.phase === 3) {
     if (dow === 6) T.push(['⏱️', 'Πλήρες διαγώνισμα με φύλλο απαντήσεων (150′, 10:00)', 'mock']);
     else if (dow === 0) T.push(['🔁', 'Διόρθωση & λάθη του διαγωνίσματος', 'mistakes']);
     else if (dow === 2 || dow === 4) T.push(['📖', 'Ένα κείμενο', 'reading']);
@@ -219,7 +266,7 @@ function completeTask(result) {
 
 /* ---------- Δρομολόγηση ---------- */
 const VIEWS = {}; let CUR = 'home', PARAM = null, LEAVE_GUARD = null;
-const QUIET_VIEWS = new Set(['home', 'plan', 'chapters', 'practice', 'mock', 'games', 'notes', 'p-home', 'p-chapters', 'p-tasks', 'p-history', 'p-settings', 'account', 'reading']);
+const QUIET_VIEWS = new Set(['home', 'plan', 'chapters', 'practice', 'mock', 'games', 'notes', 'p-home', 'p-chapters', 'p-tasks', 'p-history', 'account', 'reading']);
 function go(v, param) {
   if (LEAVE_GUARD && !LEAVE_GUARD(v)) return; LEAVE_GUARD = null; PARAM = param ?? null;
   if (location.hash === '#' + v) route(); else location.hash = v;

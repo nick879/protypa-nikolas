@@ -19,9 +19,10 @@ VIEWS['p-home'] = function () {
   const open = TASKS.filter(t => t.status !== 'done'), done = TASKS.filter(t => t.status === 'done').slice(0, 3);
   const lastMock = MOCKS[0];
   render(`<h1>Πρόοδος του Νικόλα</h1><p class="sub">${daysToExam()} μέρες ως την εξέταση · ${fmtDate(parseDay(examDate()), { day: 'numeric', month: 'long', year: 'numeric' })}${C.exam.dateEstimated && !SET.examDate ? ' (εκτίμηση)' : ''}</p>
-    <div class="card hero"><div class="lab" style="color:rgba(255,255,255,.8)">Τρέχον κεφάλαιο${SET.currentChapter ? ' (το ορίσατε εσείς)' : ' (από το πρόγραμμα)'}</div>
-      <div class="big">${esc(th ? th.title : TOP[ch].name)}</div><div class="mute">${SUBJ[TOP[ch].subject]} · μαθήματα ${cp.lessonsDone}/${cp.lessons}${cp.test ? ` · τεστ ${cp.test.score}%` : ' · τεστ: όχι ακόμα'}${cp.stats.acc !== null ? ` · ${Math.round(cp.stats.acc * 100)}% σωστές στην ενότητα` : ''}</div>
+    <div class="card hero"><div class="lab" style="color:rgba(255,255,255,.8)">Τρέχον κεφάλαιο${SET.currentChapter === ch ? ' (το ορίσατε εσείς)' : ''}</div>
+      <div class="big">${esc(th ? th.title : TOP[ch].name)}</div><div class="mute">${SUBJ[TOP[ch].subject]} · μαθήματα ${cp.lessonsDone}/${cp.lessons}${cp.test ? ` · τεστ ${bestTest(ch)}% (θέλει ${PASS}%)` : ' · τεστ: όχι ακόμα'}${cp.stats.acc !== null ? ` · ${Math.round(cp.stats.acc * 100)}% σωστές στην ενότητα` : ''}</div>
       <div class="row mt"><button class="btn sm" style="background:#fff;color:var(--acc)" onclick="go('chapter','${ch}')">Θεωρία & οδηγός γονέα</button><button class="btn sm" style="background:rgba(255,255,255,.18)" onclick="taskForm({action:'chapter:${ch}',title:'Θεωρία: ${esc(TOP[ch].name)}'})">📌 Ανάθεση</button></div></div>
+    ${paceCard(planInfo())}
     <div class="grid g4 mt">
       <div class="card"><div class="lab">Σήμερα</div><div class="big">${week[6][1]}′</div><div class="small mute">στόχος ${goal}′</div></div>
       <div class="card"><div class="lab">Σερί</div><div class="big">🔥 ${streak()}</div><div class="small mute">μέρες</div></div>
@@ -45,12 +46,21 @@ function topicBars(sj) {
 
 /* ---------- Κεφάλαια ---------- */
 VIEWS['p-chapters'] = function () {
-  const ch = currentChapter(); const f = myFocus();
-  const sorted = [...C.topics].sort((a, b) => (a.subject === f ? 0 : 1) - (b.subject === f ? 0 : 1) || CHAPTER_ORDER.indexOf(a.id) - CHAPTER_ORDER.indexOf(b.id));
-  const lastAct = id => { const s = SESS.find(x => x.topic === id || (x.answers || []).some(a => QBY[a.q] && QBY[a.q].topic === id)); return s ? fmtDate(s.ts, { day: 'numeric', month: 'short' }) : '—'; };
-  render(`<h1>Κεφάλαια</h1><p class="sub">Η θεωρία που βλέπει ο Νικόλας, με οδηγό για εσάς: τι να ελέγξετε, δραστηριότητες, ερωτήσεις-διάγνωση.</p>
-    <div class="card">${sorted.map(t => { const p = chapterProgress(t.id); const s = p.stats; return `<div class="list-item"><span class="grow">${topicTag(t.id)}<br><b>${esc(THBY[t.id] ? THBY[t.id].title : t.name)}</b>${t.id === ch ? ' <span class="tag new">τρέχον</span>' : ''}<div class="small mute">μαθήματα ${p.lessonsDone}/${p.lessons} · τεστ ${p.test ? p.test.score + '%' : '—'} · σωστές ${s.acc === null ? '—' : Math.round(s.acc * 100) + '%'} · τελευταία φορά ${lastAct(t.id)}</div></span><button class="btn sm ghost" onclick="go('chapter','${t.id}')">Άνοιγμα</button></div>`; }).join('')}</div>`);
+  const P = planInfo();
+  render(`<h1>Κεφάλαια</h1><p class="sub">Η σειρά που ακολουθεί ο Νικόλας, πού βρίσκεται και πότε αναμένεται να κλείσει κάθε κεφάλαιο με τον ρυθμό που χρειάζεται. Πατήστε ένα κεφάλαιο για θεωρία και οδηγό γονέα.</p>
+    ${paceCard(P)}
+    <div class="row mt"><button class="btn sm soft" onclick="go('settings');setTimeout(()=>{const e=document.getElementById('ordEd');e&&e.scrollIntoView()},300)">↕️ Αλλαγή σειράς / τι έχει διδαχθεί</button></div>
+    <div class="card mt">${planChaptersHTML(P, true)}</div>
+    <h2>Φάσεις</h2>${phasesHTML(P)}`);
 };
+function paceCard(P) {
+  const [ic, t, col] = STATUS_TXT[P.status]; const f = d => fmtDate(d, { day: 'numeric', month: 'long' });
+  const exp = Math.min(P.total, Math.round(P.expected));
+  return `<div class="card mt" style="border-left:5px solid ${col}"><div class="row" style="justify-content:space-between"><b style="font-size:17px">${statusLine(P)}</b><span class="small mute">φάση ${P.phase}: ${PHASES[P.phase].n}</span></div>
+    <div class="small mt">Θεωρία: <b>${P.done}/${P.total}</b> βήματα (μαθήματα + τεστ κεφαλαίων) · αναμενόμενα ως σήμερα: <b>${exp}</b></div>
+    <div style="position:relative" class="mt"><div class="bar"><i style="width:${pct(P.done, P.total)}%;background:${col}"></i></div><div title="αναμενόμενο" style="position:absolute;top:-4px;left:${pct(exp, P.total)}%;width:2px;height:16px;background:#1d2433"></div></div>
+    <div class="small mute mt">Στόχος τέλους θεωρίας: ${f(P.theoryEnd)} (${SET.theoryWeeks || 12} εβδομάδες πριν την εξέταση)${P.projected ? ` · με τον σημερινό ρυθμό τελειώνει: <b style="color:${P.projected > P.theoryEnd ? 'var(--bad)' : 'var(--ok)'}">${f(P.projected)}</b>` : ''}${P.status === 'behind' ? ` · για να προλάβει: ~${Math.ceil(P.need * 7)} βήματα/εβδομάδα` : ''}</div></div>`;
+}
 function parentChapterBox(id) {
   const th = THBY[id]; const g = th.parentGuide || {}; const p = chapterProgress(id);
   const sess = SESS.filter(s => s.topic === id).slice(0, 8);
@@ -150,9 +160,11 @@ VIEWS['p-settings'] = function () {
   render(`<h1>Ρυθμίσεις</h1>
     <div class="card"><div class="field"><label>Ημερομηνία εξέτασης</label><input type="date" id="sD" value="${esc(SET.examDate || '')}"><div class="small mute">Κενό = ${fmtDate(parseDay(E.date), { day: 'numeric', month: 'long', year: 'numeric' })}${E.dateEstimated ? ' (εκτίμηση: ' + esc(E.dateNote) + ')' : ''}. Θα ενημερωθεί και με το περιεχόμενο όταν ανακοινωθεί.</div></div>
       <div class="field"><label>Στόχος λεπτών τη μέρα</label><input type="number" id="sM" min="10" max="120" value="${SET.dailyMin || 25}"></div>
+      <div class="field"><label>Η θεωρία να τελειώνει πόσες εβδομάδες πριν την εξέταση</label><input type="number" id="sW" min="4" max="20" value="${SET.theoryWeeks || 12}"><div class="small mute">Μετά ακολουθούν εξάσκηση και διαγωνίσματα. Αν η θεωρία τελειώσει νωρίτερα, η εξάσκηση ξεκινά νωρίτερα.</div></div>
       <div class="field"><label>Έναρξη προγράμματος</label><input type="date" id="sP" value="${esc(SET.planStart || '2026-11-02')}"></div>
-      <div class="field"><label>Τρέχον κεφάλαιο</label><select id="sC"><option value="">Αυτόματα από το πρόγραμμα</option>${CHAPTER_ORDER.map(c => `<option value="${c}" ${SET.currentChapter === c ? 'selected' : ''}>${esc(THBY[c] ? THBY[c].title : TOP[c].name)} (${SUBJ[TOP[c].subject]})</option>`).join('')}</select></div>
-      <button class="btn" onclick="setSettings({examDate:$('#sD').value||null,dailyMin:+$('#sM').value||25,planStart:$('#sP').value||null,currentChapter:$('#sC').value||null})">Αποθήκευση</button></div>
+      <div class="field"><label>Τρέχον κεφάλαιο</label><select id="sC"><option value="">Αυτόματα (το πρώτο μη ολοκληρωμένο στη σειρά)</option>${CHAPTER_ORDER.map(c => `<option value="${c}" ${SET.currentChapter === c ? 'selected' : ''}>${esc(THBY[c] ? THBY[c].title : TOP[c].name)} (${SUBJ[TOP[c].subject]})</option>`).join('')}</select></div>
+      <button class="btn" onclick="setSettings({examDate:$('#sD').value||null,dailyMin:+$('#sM').value||25,planStart:$('#sP').value||null,currentChapter:$('#sC').value||null,theoryWeeks:+$('#sW').value||12})">Αποθήκευση</button></div>
+    <h2 id="ordEd">Σειρά κεφαλαίων</h2><div id="ordBox">${orderEditorHTML()}</div>
     <h2>Περιεχόμενο</h2><div class="card small">Έκδοση <b>${C.version}</b> · ${Q.length} ερωτήσεις (${Q.filter(q => q.kind === 'exam').length} από εξετάσεις, ${Q.filter(q => q.kind === 'indicative' || q.kind === 'collection').length} ενδεικτικές, ${Q.filter(q => q.kind === 'new').length} νέες εξάσκησης) · ${C.passages.length} κείμενα · ${C.theory.length} κεφάλαια θεωρίας.
       <div class="mt">Το νέο περιεχόμενο κατεβαίνει μόνο του όταν ανοίγει η εφαρμογή· η πρόοδος δεν χάνεται.</div><button class="btn sm ghost mt" onclick="checkRemoteContent().then(()=>toast('Έγινε έλεγχος'))">⟳ Έλεγχος τώρα</button></div>
     <h2>Λογαριασμός</h2><div class="card"><div class="small">${esc(USER.name)} · ${esc(USER.email)}</div><div class="row mt"><button class="btn soft" onclick="togglePreview()">👀 Δες την εφαρμογή όπως ο Νικόλας</button><button class="btn danger" onclick="logout()">Αποσύνδεση</button></div></div>`);
@@ -161,3 +173,24 @@ function assignWrong(sid) {
   const s = SESS.find(x => x.id === sid); const ids = (s.answers || []).filter(a => !a.ok).map(a => a.q);
   addDocTo('tasks', { action: 'qids:list', qids: ids, title: 'Ξανά τα λάθη: ' + s.title, text: '', due: null, status: 'open' }); closeModal(); toast('Ανατέθηκε');
 }
+
+/* ---------- Επεξεργασία σειράς κεφαλαίων ---------- */
+let ORD = null, TAUGHT = null;
+function orderEditorHTML() {
+  if (!ORD) { ORD = chapterOrder(); TAUGHT = Object.assign({}, SET.taught || {}); }
+  const pos = id => ORD.indexOf(id);
+  const changed = JSON.stringify(ORD) !== JSON.stringify(chapterOrder()) || JSON.stringify(TAUGHT) !== JSON.stringify(SET.taught || {});
+  return `<div class="card"><p class="small" style="margin-top:0">Ο Νικόλας δουλεύει τα κεφάλαια με αυτή τη σειρά, ένα τη φορά. Τα κεφάλαια είναι ανεξάρτητα, οπότε <b>οποιαδήποτε σειρά δουλεύει</b>· η εφαρμογή απλώς προειδοποιεί αν κάτι μπαίνει πριν από κάτι που συνήθως χρειάζεται πρώτα. Η πρόοδος δεν επηρεάζεται. Αν ένα κεφάλαιο έχει ήδη ξεκινήσει, ολοκληρώνεται πρώτα και μετά ακολουθείται η νέα σειρά.</p>
+    ${ORD.map((id, i) => { const deps = (CH_DEPS[id] || []).filter(d => pos(d) > i && !chapterDone(d)); const st = chapterState(id);
+      return `<div class="list-item"><span style="width:22px;font-weight:800">${i + 1}</span><span class="grow"><b>${esc(TOP[id].name)}</b> <span class="small mute">${SUBJ[TOP[id].subject]}${st === 'done' ? ' · ✓ ολοκληρωμένο' : st === 'started' ? ' · σε εξέλιξη' : ''}</span>
+        <label class="small row" style="gap:6px;margin-top:2px"><input type="checkbox" ${TAUGHT[id] ? 'checked' : ''} onchange="TAUGHT['${id}']=this.checked;if(!this.checked)delete TAUGHT['${id}'];refreshOrd()"> το έχει διδαχθεί στο σχολείο</label>
+        ${deps.length ? `<div class="small" style="color:var(--warn)">⚠ συνήθως μετά από: ${deps.map(d => esc(TOP[d].name)).join(', ')}</div>` : ''}</span>
+        <button class="btn ghost sm" ${i ? '' : 'disabled'} onclick="moveOrd(${i},-1)">↑</button><button class="btn ghost sm" ${i < ORD.length - 1 ? '' : 'disabled'} onclick="moveOrd(${i},1)">↓</button></div>`; }).join('')}
+    <div class="row mt"><button class="btn sm soft" onclick="taughtFirst()">⬆ Τα διδαγμένα πρώτα</button><button class="btn sm ghost" onclick="ORD=[...CHAPTER_ORDER];refreshOrd()">↺ Προτεινόμενη σειρά</button></div>
+    <div class="row mt"><button class="btn" ${changed ? '' : 'disabled'} onclick="saveOrd()">Αποθήκευση σειράς</button>${changed ? '<button class="btn ghost" onclick="ORD=null;refreshOrd()">Ακύρωση</button><span class="small" style="color:var(--warn)">μη αποθηκευμένες αλλαγές</span>' : ''}</div></div>`;
+}
+function refreshOrd() { const b = $('#ordBox'); if (b) b.innerHTML = orderEditorHTML(); }
+function moveOrd(i, d) { const j = i + d; [ORD[i], ORD[j]] = [ORD[j], ORD[i]]; refreshOrd(); }
+// Σταθερή ταξινόμηση: τα διδαγμένα μπαίνουν πρώτα, κρατώντας μεταξύ τους τη σχετική σειρά (άρα και την εναλλαγή Γλώσσα/Μαθηματικά)
+function taughtFirst() { ORD = [...ORD.filter(id => TAUGHT[id]), ...ORD.filter(id => !TAUGHT[id])]; refreshOrd(); }
+function saveOrd() { setSettings({ chapterOrder: ORD, taught: TAUGHT }); ORD = null; setTimeout(refreshOrd, 400); }
