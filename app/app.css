@@ -168,3 +168,5 @@ details summary{cursor:pointer}
 @media(max-width:520px){.stat-row .nm{width:110px}}
 input[type=checkbox]{width:18px;height:18px;flex:none;margin:0}
 label.row{display:flex;align-items:center;flex-wrap:nowrap}
+.flink{font-weight:700}
+a.btn{text-decoration:none;display:inline-flex;align-items:center}

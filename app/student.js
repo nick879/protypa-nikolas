@@ -1,6 +1,12 @@
 "use strict";
 /* ================= ΜΑΘΗΤΗΣ ================= */
 function canRecord() { return isStudent() || STUDENT_PREVIEW; }
+/* ---------- Αρχεία (PDF στο GitHub Pages) ---------- */
+function fileURL(id, page) { const f = FBY[id]; return f ? CFG.remoteBase + f.path.split('/').map(encodeURIComponent).join('/') + (page ? '#page=' + page : '') : ''; }
+// Στην εφαρμογή Android ο σύνδεσμος ανοίγει στο πρόγραμμα PDF/browser του κινητού· στο web σε νέα καρτέλα.
+function fileLink(id, label, page, cls) { const u = fileURL(id, page); if (!u) return ''; const nat = window.IS_NATIVE || (window.Capacitor && Capacitor.isNativePlatform && Capacitor.isNativePlatform());
+  return `<a class="${cls || 'flink'}" href="${esc(u)}" ${nat ? '' : 'target="_blank" rel="noopener"'}>${label}</a>`; }
+function fmtMB(b) { return (b / 1048576).toFixed(b > 10485760 ? 0 : 1).replace('.', ',') + ' MB'; }
 function srcTag(q) {
   const cls = q.kind === 'exam' ? 'exam' : q.kind === 'new' ? 'new' : 'ind';
   return `<span class="tag ${cls}">${esc(q.srcLabel || '')}</span>`;
@@ -48,7 +54,7 @@ VIEWS.home = function () {
       <button class="tile" onclick="startMistakes()"><span class="ic">🔁</span><b>Τα λάθη μου (${Q.filter(q => PROG.qs[q.id] && PROG.qs[q.id][4] === 0).length})</b><span class="small mute">Ξαναδοκίμασε όσες έχασες</span></button>
       <button class="tile" onclick="go('notes')"><span class="ic">💬</span><b>Σημειώσεις γονιών</b><span class="small mute">${NOTES.length} συνολικά</span></button>
     </div>
-    <div class="row mt2"><button class="btn ghost sm" onclick="go('info')">ℹ️ Για την εξέταση</button><button class="btn ghost sm" onclick="go('account')">👤 Λογαριασμός</button></div>`);
+    <div class="row mt2"><button class="btn ghost sm" onclick="go('info')">ℹ️ Για την εξέταση</button><button class="btn ghost sm" onclick="go('library')">📁 Αρχείο</button><button class="btn ghost sm" onclick="go('account')">👤 Λογαριασμός</button></div>`);
 };
 
 /* ---------- Σημειώσεις ---------- */
@@ -129,7 +135,7 @@ VIEWS.chapter = function (id) {
     ${th.method && th.method.length ? `<h2>Πώς λύνω τέτοιες ερωτήσεις</h2><div class="card"><ol style="margin:0;padding-left:20px">${th.method.map(m => `<li>${md(m)}</li>`).join('')}</ol></div>` : ''}
     ${th.traps && th.traps.length ? `<h2>Συχνές παγίδες</h2><div class="card">${th.traps.map(m => `<div class="blk-trap">⚠️ ${md(m)}</div>`).join('')}</div>` : ''}
     ${th.examples && th.examples.length ? `<h2>Λυμένα θέματα εξετάσεων</h2><div class="card">${th.examples.map(e => QBY[e.qid] ? `<div class="list-item"><span class="grow"><span class="tag exam">${esc(QBY[e.qid].srcLabel)}</span><div class="small" style="margin-top:4px">${esc(e.why)}</div></span><button class="btn sm ghost" onclick="reviewOne('${e.qid}','${QBY[e.qid].answer}')">Δες λύση</button></div>` : '').join('')}</div>` : ''}
-    ${th.bookRefs && th.bookRefs.length ? `<h2>Στο σχολικό βιβλίο</h2><div class="card small">${th.bookRefs.map(b => `<div class="list-item"><span class="grow"><b>${esc(b.book)}</b><br>${esc(b.where || '')}${b.pages ? ' · ' + esc(b.pages) : ''}</span></div>`).join('')}</div>` : ''}
+    ${th.bookRefs && th.bookRefs.length ? `<h2>Στο σχολικό βιβλίο</h2><div class="card small">${th.bookRefs.map(b => `<div class="list-item"><span class="grow"><b>${esc(b.book)}</b><br>${esc(b.where || '')}${b.pages ? ' · ' + esc(b.pages) : ''}</span>${b.file ? fileLink(b.file, '📖 Άνοιγμα', b.page, 'btn sm ghost') : ''}</div>`).join('')}<div class="mute mt">Το βιβλίο ανοίγει ολόκληρο· πήγαινε στη σελίδα που γράφει δίπλα («PDF» = αριθμός σελίδας στο αρχείο).</div></div>` : ''}
     ${isParent() ? parentChapterBox(id) : ''}`);
 };
 let LS = null; // κατάσταση μαθήματος
@@ -168,6 +174,7 @@ VIEWS.practice = function () {
       <button class="tile" onclick="startSmart()"><span class="ic">🧠</span><b>Έξυπνη εξάσκηση</b><span class="small mute">Η εφαρμογή διαλέγει για σένα</span></button>
       <button class="tile" onclick="go('reading')"><span class="ic">📖</span><b>Κείμενα</b><span class="small mute">Διάβασε και απάντησε</span></button>
       <button class="tile" onclick="startMistakes()"><span class="ic">🔁</span><b>Τα λάθη μου</b><span class="small mute">Επανάληψη όσων έχασες</span></button>
+      <button class="tile" onclick="go('library')"><span class="ic">📁</span><b>Αρχείο</b><span class="small mute">Θέματα εξετάσεων σε PDF και σχολικά βιβλία</span></button>
     </div>
     <div class="card mt2"><h3>Δική μου επιλογή</h3>
       <div class="row" style="margin:8px 0 12px">${[['all', 'Όλα'], ['lang', 'Γλώσσα'], ['math', 'Μαθηματικά']].map(([k, l]) => `<button class="chip ${k !== 'all' ? k : ''} ${PS.subj === k ? 'on' : ''}" onclick="PS.subj='${k}';PS.topics.clear();route()">${l}</button>`).join('')}</div>
@@ -235,7 +242,8 @@ function qBody(q) {
 function explHTML(q, ok) {
   return `<div class="expl ${ok ? 'ok' : 'bad'}"><b>${ok ? 'Σωστά! 🎉' : 'Όχι ακριβώς — σωστή είναι η ' + q.answer + '.'}</b><div style="margin-top:6px">${md(q.explanation || '')}</div>
     ${q.tip ? `<div class="tip">💡 ${md(q.tip)}</div>` : ''}${q.note ? `<div class="note">📝 ${md(q.note)}</div>` : ''}
-    ${THBY[q.topic] ? `<div class="tip"><a href="#" onclick="event.preventDefault();openChapter('${q.topic}')">📘 Θεωρία: ${esc(THBY[q.topic].title)}</a></div>` : ''}</div>`;
+    ${THBY[q.topic] ? `<div class="tip"><a href="#" onclick="event.preventDefault();openChapter('${q.topic}')">📘 Θεωρία: ${esc(THBY[q.topic].title)}</a></div>` : ''}
+    ${q.file ? `<div class="tip small">📄 Πρωτότυπο: ${fileLink(q.file, FBY[q.file].answers ? 'απαντήσεις' : 'θέματα')}${q.ansFile ? ' · ' + fileLink(q.ansFile, 'απαντήσεις') : ''}</div>` : ''}</div>`;
 }
 function renderQuiz() {
   const q = QZ.list[QZ.i], a = QZ.answers[q.id], n = QZ.list.length, done = Object.keys(QZ.answers).length;
@@ -342,4 +350,32 @@ VIEWS.info = function () {
   ${(E.announcements || []).length ? `<h2>Ανακοινώσεις</h2><div class="card">${E.announcements.map(a => `<div class="list-item"><span class="small mute" style="width:90px">${fmtDate(parseDay(a.date), { day: 'numeric', month: 'short', year: 'numeric' })}</span><span class="grow">${esc(a.text)}</span></div>`).join('')}</div>` : ''}
   <h2>Την ημέρα της εξέτασης</h2><div class="card"><ul class="clean"><li>Πάρε μαζί την εκτυπωμένη αίτηση με τον 6ψήφιο κωδικό υποψηφίου.</li><li>Πρώτα όσες ξέρεις σίγουρα· σημάδεψε τις δύσκολες και γύρνα μετά.</li><li>Πρόσεξε τις ερωτήσεις «ποιο <b>δεν</b>…».</li><li>Τα τελευταία 10′: έλεγξε ότι όλο το φύλλο είναι συμπληρωμένο σωστά.</li></ul></div>
   <div class="row mt2"><button class="btn ghost" onclick="go('home')">← Πίσω</button></div>`);
+};
+
+/* ---------- Αρχείο: επίσημα θέματα, ενδεικτικά, βιβλία ---------- */
+let LIBF = 'exam';
+VIEWS.library = function () {
+  const F = C.files || [];
+  const row = f => `<div class="list-item"><span class="grow"><b>${esc(f.title)}</b><div class="small mute">${f.pages} σελ. · ${fmtMB(f.size)}</div></span>${fileLink(f.id, '📄 Άνοιγμα', null, 'btn sm ghost')}</div>`;
+  let body = '';
+  if (LIBF === 'exam') {
+    const years = [...new Set(F.filter(f => f.group === 'exam' && f.year && f.id !== 'sheet-2025').map(f => f.year))].sort((a, b) => b - a);
+    body = `<p class="small mute">Τα πραγματικά θέματα κάθε χρονιάς και οι επίσημες απαντήσεις. Από το 2025 ισχύει η μορφή που θα έχει και η εξέταση του 2027. Τα 2014–2019 είχαν άλλη μορφή (ανάπτυξη, όχι πολλαπλή επιλογή).</p>
+      ${years.map(y => `<div class="card mt"><div class="row" style="justify-content:space-between"><b style="font-size:17px">${y}</b><span class="small mute">${y >= 2025 ? 'νέα μορφή (40 ερωτ.)' : y >= 2020 ? 'πολλαπλή επιλογή (50 ερωτ.)' : 'παλιά μορφή'}</span></div>
+        <div class="row mt">${F.filter(f => f.group === 'exam' && f.year === y && f.id !== 'sheet-2025').map(f => fileLink(f.id, (f.answers ? '✅ ' : '📄 ') + esc(f.title.replace(y + ' · ', '')), null, 'btn sm ' + (f.answers ? 'ghost' : 'soft'))).join('')}</div></div>`).join('')}
+      ${FBY['sheet-2025'] ? `<div class="card mt">${row(FBY['sheet-2025'])}</div>` : ''}`;
+  } else if (LIBF === 'ind') {
+    const ind = F.filter(f => f.group === 'indicative');
+    body = `<p class="small mute">Ενδεικτικά θέματα που έδωσε το Υπουργείο / ΔΕΠΠΣ κατά καιρούς, και μια συλλογή ασκήσεων.</p>
+      <h3>Γλώσσα</h3><div class="card">${ind.filter(f => f.subject === 'lang').sort((a, b) => (b.year || 0) - (a.year || 0)).map(row).join('')}</div>
+      <h3>Μαθηματικά</h3><div class="card">${ind.filter(f => f.subject === 'math').sort((a, b) => (b.year || 0) - (a.year || 0)).map(row).join('')}</div>`;
+  } else {
+    const bk = F.filter(f => f.group === 'book');
+    body = `<p class="small mute">Τα σχολικά βιβλία από όπου είναι η θεωρία της εφαρμογής. Σε κάθε κεφάλαιο, στο «Στο σχολικό βιβλίο», υπάρχει κουμπί που ανοίγει το σωστό βιβλίο και γράφει σε ποια σελίδα να πας.</p>
+      <h3>Γλώσσα</h3><div class="card">${bk.filter(f => f.subject === 'lang').map(row).join('')}</div>
+      <h3>Μαθηματικά</h3><div class="card">${bk.filter(f => f.subject === 'math').map(row).join('')}</div>`;
+  }
+  render(`<h1>Αρχείο</h1><p class="sub">Τα πρωτότυπα αρχεία σε PDF. Θέλουν internet· τα μεγάλα βιβλία μπορεί να αργήσουν λίγο να ανοίξουν.</p>
+    <div class="row">${[['exam', 'Επίσημα θέματα'], ['ind', 'Ενδεικτικά'], ['book', 'Σχολικά βιβλία']].map(([k, l]) => `<button class="chip ${LIBF === k ? 'on' : ''}" onclick="LIBF='${k}';route()">${l}</button>`).join('')}</div>
+    <div class="mt">${body}</div>`);
 };

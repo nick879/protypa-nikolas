@@ -31,7 +31,7 @@ const IDB = {
 };
 
 /* ---------- Περιεχόμενο ---------- */
-let C = null, Q = [], QBY = {}, PBY = {}, TOP = {}, THBY = {}, LESSONBY = {};
+let C = null, Q = [], QBY = {}, PBY = {}, TOP = {}, THBY = {}, LESSONBY = {}, FBY = {};
 const CHAPTER_ORDER = ['γλ-κατανόηση', 'μθ-αριθμοί', 'γλ-λεξιλόγιο', 'μθ-κλάσματα', 'γλ-γραμματική', 'μθ-ποσοστά', 'γλ-σύνταξη', 'μθ-μετρήσεις', 'γλ-νόημα', 'μθ-εξισώσεις', 'γλ-ορθογραφία', 'μθ-γεωμετρία', 'μθ-στατιστική', 'μθ-λογική'];
 function indexContent() {
   Q = C.questions.filter(q => !q.retired);
@@ -39,6 +39,7 @@ function indexContent() {
   PBY = Object.fromEntries(C.passages.map(p => [p.id, p]));
   TOP = Object.fromEntries(C.topics.map(t => [t.id, t]));
   THBY = Object.fromEntries(C.theory.map(t => [t.id, t]));
+  FBY = Object.fromEntries((C.files || []).map(f => [f.id, f]));
   LESSONBY = {}; C.theory.forEach(ch => ch.lessons.forEach((l, i) => LESSONBY[l.id] = { ...l, chapter: ch.id, idx: i }));
 }
 async function loadContent() {
@@ -266,7 +267,7 @@ function completeTask(result) {
 
 /* ---------- Δρομολόγηση ---------- */
 const VIEWS = {}; let CUR = 'home', PARAM = null, LEAVE_GUARD = null;
-const QUIET_VIEWS = new Set(['home', 'plan', 'chapters', 'practice', 'mock', 'games', 'notes', 'p-home', 'p-chapters', 'p-tasks', 'p-history', 'account', 'reading']);
+const QUIET_VIEWS = new Set(['home', 'plan', 'chapters', 'practice', 'mock', 'games', 'notes', 'p-home', 'p-chapters', 'p-tasks', 'p-history', 'account', 'reading', 'library']);
 function go(v, param) {
   if (LEAVE_GUARD && !LEAVE_GUARD(v)) return; LEAVE_GUARD = null; PARAM = param ?? null;
   if (location.hash === '#' + v) route(); else location.hash = v;

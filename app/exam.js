@@ -48,6 +48,7 @@ VIEWS.mock = function () {
         <button class="tile" onclick="startMock('gen-math')"><span class="ic">🔢</span><b>Μισό: Μαθηματικά</b><span class="small mute">20 ερωτήσεις · 75′</span></button>
       </div>
       <h2>Επίσημα θέματα</h2><div class="grid g4">${OFFICIAL_YEARS.map(y => { const b = best(y); const n = officialList(y).length; return `<button class="tile" onclick="startMock('off-${y}')"><b>${y}</b><span class="small mute">${n} ερωτήσεις${y <= 2024 ? ' · παλιά δομή' : ''}</span>${b !== null ? `<span class="small"><b>καλύτερο ${b}%</b></span>` : ''}</button>`; }).join('')}</div>
+      <div class="small mt">📄 Τα πρωτότυπα σε PDF: <a href="#" onclick="event.preventDefault();LIBF='exam';go('library')">Αρχείο θεμάτων</a></div>
       <p class="small mute">2025 και 2026 έχουν τη δομή που ισχύει και για το 2027. Τα 2020–2024 είχαν 50 ερωτήσεις των 2 μονάδων.</p>
       ${hist.length ? `<h2>Τα διαγωνίσματά μου</h2><div class="card">${hist.map(m => `<div class="list-item"><span class="small mute" style="width:70px">${fmtDate(m.ts, { day: 'numeric', month: 'short' })}</span><span class="grow"><b>${esc(m.title)}</b><div class="small mute">${m.mode === 'sheet' ? '📄 με φύλλο · ' : ''}${fmtMin(m.sec)} · Γλ. ${m.langPct ?? '—'}% · Μαθ. ${m.mathPct ?? '—'}%</div></span><b>${m.score}/${m.max}</b><button class="btn sm ghost" onclick="showMockResult('${m.id}')">Δες</button></div>`).join('')}</div>` : ''}`);
   });

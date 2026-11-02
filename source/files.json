@@ -1,0 +1,925 @@
+[
+ {
+  "id": "exam-2014-glossa",
+  "title": "2014 · Γλώσσα · Θέματα",
+  "group": "exam",
+  "path": "files/papers/2014-glossa-themata.pdf",
+  "size": 510000,
+  "pages": 4,
+  "year": 2014,
+  "subject": "lang"
+ },
+ {
+  "id": "ans-2014-glossa",
+  "title": "2014 · Γλώσσα · Απαντήσεις",
+  "group": "exam",
+  "path": "files/papers/2014-glossa-apantiseis.pdf",
+  "size": 517185,
+  "pages": 4,
+  "year": 2014,
+  "subject": "lang",
+  "answers": true
+ },
+ {
+  "id": "exam-2014-math",
+  "title": "2014 · Μαθηματικά · Θέματα",
+  "group": "exam",
+  "path": "files/papers/2014-math-themata.pdf",
+  "size": 146609,
+  "pages": 4,
+  "year": 2014,
+  "subject": "math"
+ },
+ {
+  "id": "ans-2014-math",
+  "title": "2014 · Μαθηματικά · Απαντήσεις",
+  "group": "exam",
+  "path": "files/papers/2014-math-apantiseis.pdf",
+  "size": 433932,
+  "pages": 4,
+  "year": 2014,
+  "subject": "math",
+  "answers": true
+ },
+ {
+  "id": "exam-2015-glossa",
+  "title": "2015 · Γλώσσα · Θέματα",
+  "group": "exam",
+  "path": "files/papers/2015-glossa-themata.pdf",
+  "size": 663468,
+  "pages": 6,
+  "year": 2015,
+  "subject": "lang"
+ },
+ {
+  "id": "ans-2015-glossa",
+  "title": "2015 · Γλώσσα · Απαντήσεις",
+  "group": "exam",
+  "path": "files/papers/2015-glossa-apantiseis.pdf",
+  "size": 449970,
+  "pages": 6,
+  "year": 2015,
+  "subject": "lang",
+  "answers": true
+ },
+ {
+  "id": "exam-2015-math",
+  "title": "2015 · Μαθηματικά · Θέματα",
+  "group": "exam",
+  "path": "files/papers/2015-math-themata.pdf",
+  "size": 337113,
+  "pages": 4,
+  "year": 2015,
+  "subject": "math"
+ },
+ {
+  "id": "ans-2015-math",
+  "title": "2015 · Μαθηματικά · Απαντήσεις",
+  "group": "exam",
+  "path": "files/papers/2015-math-apantiseis.pdf",
+  "size": 39551,
+  "pages": 1,
+  "year": 2015,
+  "subject": "math",
+  "answers": true
+ },
+ {
+  "id": "exam-2016-glossa",
+  "title": "2016 · Γλώσσα · Θέματα",
+  "group": "exam",
+  "path": "files/papers/2016-glossa-themata.pdf",
+  "size": 500443,
+  "pages": 6,
+  "year": 2016,
+  "subject": "lang"
+ },
+ {
+  "id": "ans-2016-glossa",
+  "title": "2016 · Γλώσσα · Απαντήσεις",
+  "group": "exam",
+  "path": "files/papers/2016-glossa-apantiseis.pdf",
+  "size": 373188,
+  "pages": 7,
+  "year": 2016,
+  "subject": "lang",
+  "answers": true
+ },
+ {
+  "id": "exam-2016-math",
+  "title": "2016 · Μαθηματικά · Θέματα",
+  "group": "exam",
+  "path": "files/papers/2016-math-themata.pdf",
+  "size": 243740,
+  "pages": 4,
+  "year": 2016,
+  "subject": "math"
+ },
+ {
+  "id": "ans-2016-math",
+  "title": "2016 · Μαθηματικά · Απαντήσεις",
+  "group": "exam",
+  "path": "files/papers/2016-math-apantiseis.pdf",
+  "size": 185803,
+  "pages": 2,
+  "year": 2016,
+  "subject": "math",
+  "answers": true
+ },
+ {
+  "id": "exam-2017-glossa",
+  "title": "2017 · Γλώσσα · Θέματα",
+  "group": "exam",
+  "path": "files/papers/2017-glossa-themata.pdf",
+  "size": 585084,
+  "pages": 3,
+  "year": 2017,
+  "subject": "lang"
+ },
+ {
+  "id": "ans-2017-glossa",
+  "title": "2017 · Γλώσσα · Απαντήσεις",
+  "group": "exam",
+  "path": "files/papers/2017-glossa-apantiseis.pdf",
+  "size": 151845,
+  "pages": 1,
+  "year": 2017,
+  "subject": "lang",
+  "answers": true
+ },
+ {
+  "id": "exam-2017-math",
+  "title": "2017 · Μαθηματικά · Θέματα",
+  "group": "exam",
+  "path": "files/papers/2017-math-themata.pdf",
+  "size": 505648,
+  "pages": 4,
+  "year": 2017,
+  "subject": "math"
+ },
+ {
+  "id": "ans-2017-math",
+  "title": "2017 · Μαθηματικά · Απαντήσεις",
+  "group": "exam",
+  "path": "files/papers/2017-math-apantiseis.pdf",
+  "size": 506486,
+  "pages": 4,
+  "year": 2017,
+  "subject": "math",
+  "answers": true
+ },
+ {
+  "id": "exam-2018-glossa",
+  "title": "2018 · Γλώσσα · Θέματα",
+  "group": "exam",
+  "path": "files/papers/2018-glossa-themata.pdf",
+  "size": 462392,
+  "pages": 4,
+  "year": 2018,
+  "subject": "lang"
+ },
+ {
+  "id": "ans-2018-glossa",
+  "title": "2018 · Γλώσσα · Απαντήσεις",
+  "group": "exam",
+  "path": "files/papers/2018-glossa-apantiseis.pdf",
+  "size": 369333,
+  "pages": 2,
+  "year": 2018,
+  "subject": "lang",
+  "answers": true
+ },
+ {
+  "id": "exam-2018-math",
+  "title": "2018 · Μαθηματικά · Θέματα",
+  "group": "exam",
+  "path": "files/papers/2018-math-themata.pdf",
+  "size": 561904,
+  "pages": 4,
+  "year": 2018,
+  "subject": "math"
+ },
+ {
+  "id": "ans-2018-math",
+  "title": "2018 · Μαθηματικά · Απαντήσεις",
+  "group": "exam",
+  "path": "files/papers/2018-math-apantiseis.pdf",
+  "size": 197999,
+  "pages": 1,
+  "year": 2018,
+  "subject": "math",
+  "answers": true
+ },
+ {
+  "id": "exam-2019-glossa",
+  "title": "2019 · Γλώσσα · Θέματα",
+  "group": "exam",
+  "path": "files/papers/2019-glossa-themata.pdf",
+  "size": 464071,
+  "pages": 4,
+  "year": 2019,
+  "subject": "lang"
+ },
+ {
+  "id": "ans-2019-glossa",
+  "title": "2019 · Γλώσσα · Απαντήσεις",
+  "group": "exam",
+  "path": "files/papers/2019-glossa-apantiseis.pdf",
+  "size": 1047472,
+  "pages": 3,
+  "year": 2019,
+  "subject": "lang",
+  "answers": true
+ },
+ {
+  "id": "exam-2019-math",
+  "title": "2019 · Μαθηματικά · Θέματα",
+  "group": "exam",
+  "path": "files/papers/2019-math-themata.pdf",
+  "size": 631772,
+  "pages": 4,
+  "year": 2019,
+  "subject": "math"
+ },
+ {
+  "id": "ans-2019-math",
+  "title": "2019 · Μαθηματικά · Απαντήσεις",
+  "group": "exam",
+  "path": "files/papers/2019-math-apantiseis.pdf",
+  "size": 311469,
+  "pages": 3,
+  "year": 2019,
+  "subject": "math",
+  "answers": true
+ },
+ {
+  "id": "exam-2020-glossa",
+  "title": "2020 · Γλώσσα · Θέματα",
+  "group": "exam",
+  "path": "files/papers/2020-glossa-themata.pdf",
+  "size": 144408,
+  "pages": 7,
+  "year": 2020,
+  "subject": "lang"
+ },
+ {
+  "id": "ans-2020-glossa",
+  "title": "2020 · Γλώσσα · Απαντήσεις",
+  "group": "exam",
+  "path": "files/papers/2020-glossa-apantiseis.pdf",
+  "size": 109103,
+  "pages": 1,
+  "year": 2020,
+  "subject": "lang",
+  "answers": true
+ },
+ {
+  "id": "exam-2020-math",
+  "title": "2020 · Μαθηματικά · Θέματα",
+  "group": "exam",
+  "path": "files/papers/2020-math-themata.pdf",
+  "size": 217880,
+  "pages": 5,
+  "year": 2020,
+  "subject": "math"
+ },
+ {
+  "id": "ans-2020-math",
+  "title": "2020 · Μαθηματικά · Απαντήσεις",
+  "group": "exam",
+  "path": "files/papers/2020-math-apantiseis.pdf",
+  "size": 81157,
+  "pages": 1,
+  "year": 2020,
+  "subject": "math",
+  "answers": true
+ },
+ {
+  "id": "exam-2021",
+  "title": "2021 · Θέματα (Γλώσσα + Μαθηματικά)",
+  "group": "exam",
+  "path": "files/papers/2021-themata.pdf",
+  "size": 243015,
+  "pages": 6,
+  "year": 2021
+ },
+ {
+  "id": "ans-2021",
+  "title": "2021 · Απαντήσεις",
+  "group": "exam",
+  "path": "files/papers/2021-apantiseis.pdf",
+  "size": 51456,
+  "pages": 1,
+  "year": 2021,
+  "answers": true
+ },
+ {
+  "id": "exam-2022",
+  "title": "2022 · Θέματα (Γλώσσα + Μαθηματικά)",
+  "group": "exam",
+  "path": "files/papers/2022-themata.pdf",
+  "size": 793242,
+  "pages": 7,
+  "year": 2022
+ },
+ {
+  "id": "ans-2022",
+  "title": "2022 · Απαντήσεις",
+  "group": "exam",
+  "path": "files/papers/2022-apantiseis.pdf",
+  "size": 66222,
+  "pages": 1,
+  "year": 2022,
+  "answers": true
+ },
+ {
+  "id": "exam-2023",
+  "title": "2023 · Θέματα (Γλώσσα + Μαθηματικά)",
+  "group": "exam",
+  "path": "files/papers/2023-themata.pdf",
+  "size": 969657,
+  "pages": 7,
+  "year": 2023
+ },
+ {
+  "id": "ans-2023",
+  "title": "2023 · Απαντήσεις",
+  "group": "exam",
+  "path": "files/papers/2023-apantiseis.pdf",
+  "size": 218220,
+  "pages": 1,
+  "year": 2023,
+  "answers": true
+ },
+ {
+  "id": "exam-2024",
+  "title": "2024 · Θέματα (Γλώσσα + Μαθηματικά)",
+  "group": "exam",
+  "path": "files/papers/2024-themata.pdf",
+  "size": 1108294,
+  "pages": 8,
+  "year": 2024
+ },
+ {
+  "id": "ans-2024",
+  "title": "2024 · Απαντήσεις",
+  "group": "exam",
+  "path": "files/papers/2024-apantiseis.pdf",
+  "size": 653429,
+  "pages": 3,
+  "year": 2024,
+  "answers": true
+ },
+ {
+  "id": "exam-2025",
+  "title": "2025 · Θέματα (Γλώσσα + Μαθηματικά)",
+  "group": "exam",
+  "path": "files/papers/2025-themata.pdf",
+  "size": 236424,
+  "pages": 9,
+  "year": 2025
+ },
+ {
+  "id": "ans-2025",
+  "title": "2025 · Απαντήσεις",
+  "group": "exam",
+  "path": "files/papers/2025-apantiseis.pdf",
+  "size": 47667,
+  "pages": 1,
+  "year": 2025,
+  "answers": true
+ },
+ {
+  "id": "exam-2026",
+  "title": "2026 · Θέματα (Γλώσσα + Μαθηματικά)",
+  "group": "exam",
+  "path": "files/papers/2026-themata.pdf",
+  "size": 967334,
+  "pages": 9,
+  "year": 2026
+ },
+ {
+  "id": "ans-2026",
+  "title": "2026 · Απαντήσεις",
+  "group": "exam",
+  "path": "files/papers/2026-apantiseis.pdf",
+  "size": 88545,
+  "pages": 1,
+  "year": 2026,
+  "answers": true
+ },
+ {
+  "id": "ind-2026-lang",
+  "title": "Ενδεικτικά 2026 · Γλώσσα",
+  "group": "indicative",
+  "path": "files/papers/endeiktika-2026-glossa.pdf",
+  "size": 300545,
+  "pages": 9,
+  "year": 2026,
+  "subject": "lang",
+  "answers": false
+ },
+ {
+  "id": "ind-2026-math",
+  "title": "Ενδεικτικά 2026 · Μαθηματικά",
+  "group": "indicative",
+  "path": "files/papers/endeiktika-2026-math.pdf",
+  "size": 426562,
+  "pages": 6,
+  "year": 2026,
+  "subject": "math",
+  "answers": false
+ },
+ {
+  "id": "ind-2025-lang",
+  "title": "Ενδεικτικά 2025 · Γλώσσα",
+  "group": "indicative",
+  "path": "files/papers/endeiktika-2025-glossa.pdf",
+  "size": 359647,
+  "pages": 7,
+  "year": 2025,
+  "subject": "lang",
+  "answers": false
+ },
+ {
+  "id": "ind-2025-math",
+  "title": "Ενδεικτικά 2025 · Μαθηματικά",
+  "group": "indicative",
+  "path": "files/papers/endeiktika-2025-math.pdf",
+  "size": 350368,
+  "pages": 6,
+  "year": 2025,
+  "subject": "math",
+  "answers": false
+ },
+ {
+  "id": "ind-2023-math",
+  "title": "Ενδεικτικά 2023 · Μαθηματικά",
+  "group": "indicative",
+  "path": "files/papers/endeiktika-2023-math.pdf",
+  "size": 249773,
+  "pages": 3,
+  "year": 2023,
+  "subject": "math",
+  "answers": false
+ },
+ {
+  "id": "ind-2022-math",
+  "title": "Ενδεικτικά 2022 · Μαθηματικά",
+  "group": "indicative",
+  "path": "files/papers/endeiktika-2022-math.pdf",
+  "size": 588926,
+  "pages": 5,
+  "year": 2022,
+  "subject": "math",
+  "answers": false
+ },
+ {
+  "id": "ind-2022-lang",
+  "title": "Ενδεικτικά 2022 · Γλώσσα",
+  "group": "indicative",
+  "path": "files/papers/endeiktika-2022-glossa.pdf",
+  "size": 364772,
+  "pages": 3,
+  "year": 2022,
+  "subject": "lang",
+  "answers": false
+ },
+ {
+  "id": "ind-2021-math",
+  "title": "Ενδεικτικά 2021 · Μαθηματικά",
+  "group": "indicative",
+  "path": "files/papers/endeiktika-2021-math.pdf",
+  "size": 520071,
+  "pages": 5,
+  "year": 2021,
+  "subject": "math",
+  "answers": false
+ },
+ {
+  "id": "ind-2020-math",
+  "title": "Ενδεικτικά 2020 · Μαθηματικά",
+  "group": "indicative",
+  "path": "files/papers/endeiktika-2020-math.pdf",
+  "size": 453182,
+  "pages": 4,
+  "year": 2020,
+  "subject": "math",
+  "answers": false
+ },
+ {
+  "id": "ind-2018-lang-1",
+  "title": "Ενδεικτικά 2018 · Γλώσσα (θέμα 1)",
+  "group": "indicative",
+  "path": "files/papers/endeiktika-2018-glossa-1.pdf",
+  "size": 250650,
+  "pages": 3,
+  "year": 2018,
+  "subject": "lang",
+  "answers": false
+ },
+ {
+  "id": "ind-2018-lang-2",
+  "title": "Ενδεικτικά 2018 · Γλώσσα (θέμα 2)",
+  "group": "indicative",
+  "path": "files/papers/endeiktika-2018-glossa-2.pdf",
+  "size": 292354,
+  "pages": 3,
+  "year": 2018,
+  "subject": "lang",
+  "answers": false
+ },
+ {
+  "id": "ind-2018-math-1",
+  "title": "Ενδεικτικά 2018 · Μαθηματικά (Ι)",
+  "group": "indicative",
+  "path": "files/papers/endeiktika-2018-math-1.pdf",
+  "size": 205773,
+  "pages": 2,
+  "year": 2018,
+  "subject": "math",
+  "answers": false
+ },
+ {
+  "id": "ind-2018-math-1a",
+  "title": "Ενδεικτικά 2018 · Μαθηματικά (Ι) · Απαντήσεις",
+  "group": "indicative",
+  "path": "files/papers/endeiktika-2018-math-1-apantiseis.pdf",
+  "size": 185076,
+  "pages": 1,
+  "year": 2018,
+  "subject": "math",
+  "answers": true
+ },
+ {
+  "id": "ind-2018-math-2",
+  "title": "Ενδεικτικά 2018 · Μαθηματικά (ΙΙ)",
+  "group": "indicative",
+  "path": "files/papers/endeiktika-2018-math-2.pdf",
+  "size": 308997,
+  "pages": 2,
+  "year": 2018,
+  "subject": "math",
+  "answers": false
+ },
+ {
+  "id": "ind-2018-math-2a",
+  "title": "Ενδεικτικά 2018 · Μαθηματικά (ΙΙ) · Απαντήσεις",
+  "group": "indicative",
+  "path": "files/papers/endeiktika-2018-math-2-apantiseis.pdf",
+  "size": 182410,
+  "pages": 1,
+  "year": 2018,
+  "subject": "math",
+  "answers": true
+ },
+ {
+  "id": "ind-2017-lang-a",
+  "title": "Ενδεικτικά 2017 · Γλώσσα (θέμα Α΄)",
+  "group": "indicative",
+  "path": "files/papers/endeiktika-2017-glossa-a.pdf",
+  "size": 486166,
+  "pages": 4,
+  "year": 2017,
+  "subject": "lang",
+  "answers": false
+ },
+ {
+  "id": "ind-2017-lang-b",
+  "title": "Ενδεικτικά 2017 · Γλώσσα (θέμα Β΄)",
+  "group": "indicative",
+  "path": "files/papers/endeiktika-2017-glossa-b.pdf",
+  "size": 485146,
+  "pages": 3,
+  "year": 2017,
+  "subject": "lang",
+  "answers": false
+ },
+ {
+  "id": "ind-2017-math",
+  "title": "Ενδεικτικά 2017 · Μαθηματικά",
+  "group": "indicative",
+  "path": "files/papers/endeiktika-2017-math.pdf",
+  "size": 458199,
+  "pages": 3,
+  "year": 2017,
+  "subject": "math",
+  "answers": false
+ },
+ {
+  "id": "ind-2017-math-a",
+  "title": "Ενδεικτικά 2017 · Μαθηματικά · Απαντήσεις",
+  "group": "indicative",
+  "path": "files/papers/endeiktika-2017-math-apantiseis.pdf",
+  "size": 374271,
+  "pages": 2,
+  "year": 2017,
+  "subject": "math",
+  "answers": true
+ },
+ {
+  "id": "ind-xenopoulos",
+  "title": "Ενδεικτικά Γλώσσας 2021 · Ξενόπουλος (Αυτοβιογραφία)",
+  "group": "indicative",
+  "path": "files/papers/glossa-xenopoulos.pdf",
+  "size": 76094,
+  "pages": 4,
+  "subject": "lang"
+ },
+ {
+  "id": "ind-dynatos",
+  "title": "Ενδεικτικά Γλώσσας 2021 · Ο πιο δυνατός από όλους",
+  "group": "indicative",
+  "path": "files/papers/glossa-o-pio-dynatos.pdf",
+  "size": 62517,
+  "pages": 4,
+  "subject": "lang"
+ },
+ {
+  "id": "ind-paichnidia",
+  "title": "Ενδεικτικά Γλώσσας 2021 · Τα παιδικά μου παιχνίδια",
+  "group": "indicative",
+  "path": "files/papers/glossa-paidika-paichnidia.pdf",
+  "size": 55116,
+  "pages": 3,
+  "subject": "lang"
+ },
+ {
+  "id": "ind-stoicheio",
+  "title": "Ενδεικτικά Γλώσσας 2021 · Το στοιχειό",
+  "group": "indicative",
+  "path": "files/papers/glossa-to-stoicheio.pdf",
+  "size": 67489,
+  "pages": 4,
+  "subject": "lang"
+ },
+ {
+  "id": "ind-erevna",
+  "title": "Ενδεικτικά Γλώσσας · Έρευνα",
+  "group": "indicative",
+  "path": "files/papers/glossa-erevna.pdf",
+  "size": 59828,
+  "pages": 2,
+  "subject": "lang"
+ },
+ {
+  "id": "ind-arion",
+  "title": "Ενδεικτικά Γλώσσας · Αρίων",
+  "group": "indicative",
+  "path": "files/papers/glossa-arion.pdf",
+  "size": 73421,
+  "pages": 3,
+  "subject": "lang"
+ },
+ {
+  "id": "ind-paidia",
+  "title": "Ενδεικτικά Γλώσσας · Γίνετε σαν τα παιδιά",
+  "group": "indicative",
+  "path": "files/papers/glossa-ginete-san-ta-paidia.pdf",
+  "size": 72403,
+  "pages": 4,
+  "subject": "lang"
+ },
+ {
+  "id": "ind-mcq",
+  "title": "Ενδεικτικά Γλώσσας · Ερωτήσεις πολλαπλής επιλογής",
+  "group": "indicative",
+  "path": "files/papers/glossa-erotiseis-pollaplis.pdf",
+  "size": 97176,
+  "pages": 3,
+  "subject": "lang"
+ },
+ {
+  "id": "ind-thalassa",
+  "title": "Ενδεικτικά Γλώσσας · Η θάλασσα",
+  "group": "indicative",
+  "path": "files/papers/glossa-i-thalassa.pdf",
+  "size": 56323,
+  "pages": 2,
+  "subject": "lang"
+ },
+ {
+  "id": "ind-ichor",
+  "title": "Ενδεικτικά Γλώσσας · Ηχορρύπανση",
+  "group": "indicative",
+  "path": "files/papers/glossa-ichorrypansi.pdf",
+  "size": 74525,
+  "pages": 3,
+  "subject": "lang"
+ },
+ {
+  "id": "ind-flyaros",
+  "title": "Ενδεικτικά Γλώσσας · Ο φλύαρος",
+  "group": "indicative",
+  "path": "files/papers/glossa-o-flyaros.pdf",
+  "size": 67482,
+  "pages": 3,
+  "subject": "lang"
+ },
+ {
+  "id": "ind-hobbit",
+  "title": "Ενδεικτικά Γλώσσας · Οι Χόμπιτ",
+  "group": "indicative",
+  "path": "files/papers/glossa-chobbit.pdf",
+  "size": 67778,
+  "pages": 3,
+  "subject": "lang"
+ },
+ {
+  "id": "ind-stefanidi",
+  "title": "Ενδεικτικά Γλώσσας · Στεφανίδη",
+  "group": "indicative",
+  "path": "files/papers/glossa-stefanidi.pdf",
+  "size": 71369,
+  "pages": 3,
+  "subject": "lang"
+ },
+ {
+  "id": "col-25themata",
+  "title": "Συλλογή «25 θέματα» για εισαγωγή",
+  "group": "indicative",
+  "path": "files/papers/syllogi-25-themata.pdf",
+  "size": 353511,
+  "pages": 5,
+  "subject": "math"
+ },
+ {
+  "id": "sheet-2025",
+  "title": "Φύλλο απαντήσεων (επίσημο υπόδειγμα 2025)",
+  "group": "exam",
+  "path": "files/papers/fyllo-apantiseon-2025.pdf",
+  "size": 332061,
+  "pages": 1,
+  "year": 2025
+ },
+ {
+  "id": "bk-glossa-st-a",
+  "title": "Γλώσσα Στ΄ · Βιβλίο μαθητή · Τεύχος Α",
+  "group": "book",
+  "path": "files/books/glossa-st-mathiti-a.pdf",
+  "size": 13020776,
+  "pages": 98,
+  "subject": "lang"
+ },
+ {
+  "id": "bk-glossa-st-b",
+  "title": "Γλώσσα Στ΄ · Βιβλίο μαθητή · Τεύχος Β",
+  "group": "book",
+  "path": "files/books/glossa-st-mathiti-b.pdf",
+  "size": 15421964,
+  "pages": 110,
+  "subject": "lang"
+ },
+ {
+  "id": "bk-glossa-st-c",
+  "title": "Γλώσσα Στ΄ · Βιβλίο μαθητή · Τεύχος Γ",
+  "group": "book",
+  "path": "files/books/glossa-st-mathiti-c.pdf",
+  "size": 12707051,
+  "pages": 90,
+  "subject": "lang"
+ },
+ {
+  "id": "bk-glossa-st-ta",
+  "title": "Γλώσσα Στ΄ · Τετράδιο εργασιών · Τεύχος Α",
+  "group": "book",
+  "path": "files/books/glossa-st-tetradio-a.pdf",
+  "size": 6508808,
+  "pages": 74,
+  "subject": "lang"
+ },
+ {
+  "id": "bk-glossa-st-tb",
+  "title": "Γλώσσα Στ΄ · Τετράδιο εργασιών · Τεύχος Β",
+  "group": "book",
+  "path": "files/books/glossa-st-tetradio-b.pdf",
+  "size": 4529720,
+  "pages": 74,
+  "subject": "lang"
+ },
+ {
+  "id": "bk-glossa-st-d",
+  "title": "Γλώσσα Στ΄ · Βιβλίο δασκάλου",
+  "group": "book",
+  "path": "files/books/glossa-st-daskalou.pdf",
+  "size": 868537,
+  "pages": 58,
+  "subject": "lang"
+ },
+ {
+  "id": "bk-grammatiki-ed",
+  "title": "Γραμματική Ε΄ & Στ΄ Δημοτικού",
+  "group": "book",
+  "path": "files/books/grammatiki-e-st-dimotikou.pdf",
+  "size": 34468748,
+  "pages": 222,
+  "subject": "lang"
+ },
+ {
+  "id": "bk-grammatiki-gym",
+  "title": "Γραμματική Νέας Ελληνικής Γλώσσας Α΄–Γ΄ Γυμνασίου",
+  "group": "book",
+  "path": "files/books/grammatiki-gymnasiou.pdf",
+  "size": 3176956,
+  "pages": 202,
+  "subject": "lang"
+ },
+ {
+  "id": "bk-math-st",
+  "title": "Μαθηματικά Στ΄ · Βιβλίο μαθητή",
+  "group": "book",
+  "path": "files/books/math-st-mathiti.pdf",
+  "size": 30981145,
+  "pages": 178,
+  "subject": "math"
+ },
+ {
+  "id": "bk-math-st-ta",
+  "title": "Μαθηματικά Στ΄ · Τετράδιο εργασιών · Τεύχος Α",
+  "group": "book",
+  "path": "files/books/math-st-tetradio-a.pdf",
+  "size": 2995970,
+  "pages": 46,
+  "subject": "math"
+ },
+ {
+  "id": "bk-math-st-tb",
+  "title": "Μαθηματικά Στ΄ · Τετράδιο εργασιών · Τεύχος Β",
+  "group": "book",
+  "path": "files/books/math-st-tetradio-b.pdf",
+  "size": 3961614,
+  "pages": 46,
+  "subject": "math"
+ },
+ {
+  "id": "bk-math-st-tc",
+  "title": "Μαθηματικά Στ΄ · Τετράδιο εργασιών · Τεύχος Γ",
+  "group": "book",
+  "path": "files/books/math-st-tetradio-c.pdf",
+  "size": 4096591,
+  "pages": 46,
+  "subject": "math"
+ },
+ {
+  "id": "bk-math-st-td",
+  "title": "Μαθηματικά Στ΄ · Τετράδιο εργασιών · Τεύχος Δ",
+  "group": "book",
+  "path": "files/books/math-st-tetradio-d.pdf",
+  "size": 4139469,
+  "pages": 46,
+  "subject": "math"
+ },
+ {
+  "id": "bk-math-st-d",
+  "title": "Μαθηματικά Στ΄ · Βιβλίο δασκάλου",
+  "group": "book",
+  "path": "files/books/math-st-daskalou.pdf",
+  "size": 1424578,
+  "pages": 170,
+  "subject": "math"
+ },
+ {
+  "id": "bk-math-e-a",
+  "title": "Μαθηματικά Ε΄ · Βιβλίο μαθητή · Τεύχος Α",
+  "group": "book",
+  "path": "files/books/math-e-mathiti-a.pdf",
+  "size": 13984638,
+  "pages": 82,
+  "subject": "math"
+ },
+ {
+  "id": "bk-math-e-b",
+  "title": "Μαθηματικά Ε΄ · Βιβλίο μαθητή · Τεύχος Β",
+  "group": "book",
+  "path": "files/books/math-e-mathiti-b.pdf",
+  "size": 27433882,
+  "pages": 90,
+  "subject": "math"
+ },
+ {
+  "id": "bk-math-e-ta",
+  "title": "Μαθηματικά Ε΄ · Τετράδιο εργασιών · Τεύχος Α",
+  "group": "book",
+  "path": "files/books/math-e-tetradio-a.pdf",
+  "size": 11540581,
+  "pages": 74,
+  "subject": "math"
+ },
+ {
+  "id": "bk-math-e-tb",
+  "title": "Μαθηματικά Ε΄ · Τετράδιο εργασιών · Τεύχος Β",
+  "group": "book",
+  "path": "files/books/math-e-tetradio-b.pdf",
+  "size": 15566356,
+  "pages": 82,
+  "subject": "math"
+ },
+ {
+  "id": "bk-math-e-d",
+  "title": "Μαθηματικά Ε΄ · Βιβλίο δασκάλου",
+  "group": "book",
+  "path": "files/books/math-e-daskalou.pdf",
+  "size": 43855876,
+  "pages": 178,
+  "subject": "math"
+ }
+]

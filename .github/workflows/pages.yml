@@ -1,8 +1,8 @@
 name: Web (GitHub Pages)
 on:
   push:
-    branches: [main]
-    paths: ['app/**', '.github/workflows/pages.yml']
+    branches: [main, files]
+    paths: ['app/**', 'files/**', '.github/workflows/pages.yml']
   workflow_dispatch:
 permissions:
   contents: read
@@ -15,6 +15,11 @@ jobs:
     environment: { name: github-pages, url: '${{ steps.d.outputs.page_url }}' }
     steps:
       - uses: actions/checkout@v4
+        with: { ref: main }
+      - name: Αρχεία PDF (κλάδος files)
+        uses: actions/checkout@v4
+        with: { ref: files, path: _files }
+      - run: cp -r _files/files app/files && du -sh app
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with: { path: app }

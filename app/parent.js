@@ -49,7 +49,7 @@ VIEWS['p-chapters'] = function () {
   const P = planInfo();
   render(`<h1>Κεφάλαια</h1><p class="sub">Η σειρά που ακολουθεί ο Νικόλας, πού βρίσκεται και πότε αναμένεται να κλείσει κάθε κεφάλαιο με τον ρυθμό που χρειάζεται. Πατήστε ένα κεφάλαιο για θεωρία και οδηγό γονέα.</p>
     ${paceCard(P)}
-    <div class="row mt"><button class="btn sm soft" onclick="go('settings');setTimeout(()=>{const e=document.getElementById('ordEd');e&&e.scrollIntoView()},300)">↕️ Αλλαγή σειράς / τι έχει διδαχθεί</button></div>
+    <div class="row mt"><button class="btn sm soft" onclick="go('settings');setTimeout(()=>{const e=document.getElementById('ordEd');e&&e.scrollIntoView()},300)">↕️ Αλλαγή σειράς / τι έχει διδαχθεί</button><button class="btn sm ghost" onclick="go('library')">📁 Αρχείο θεμάτων & βιβλίων</button></div>
     <div class="card mt">${planChaptersHTML(P, true)}</div>
     <h2>Φάσεις</h2>${phasesHTML(P)}`);
 };
@@ -158,7 +158,7 @@ function sessionDetail(id) {
 VIEWS['p-settings'] = function () {
   const E = C.exam;
   render(`<h1>Ρυθμίσεις</h1>
-    <div class="card"><div class="field"><label>Ημερομηνία εξέτασης</label><input type="date" id="sD" value="${esc(SET.examDate || '')}"><div class="small mute">Κενό = ${fmtDate(parseDay(E.date), { day: 'numeric', month: 'long', year: 'numeric' })}${E.dateEstimated ? ' (εκτίμηση: ' + esc(E.dateNote) + ')' : ''}. Θα ενημερωθεί και με το περιεχόμενο όταν ανακοινωθεί.</div></div>
+    <div class="card"><div class="field"><label>Ημερομηνία εξέτασης</label><input type="date" id="sD" value="${esc(SET.examDate || '')}"><div class="small mute">Κενό = ${fmtDate(parseDay(E.date), { day: 'numeric', month: 'long', year: 'numeric' })}${E.dateEstimated ? ' (' + esc(E.dateNote) + ')' : ''}. Θα ενημερωθεί και με το περιεχόμενο όταν ανακοινωθεί.</div></div>
       <div class="field"><label>Στόχος λεπτών τη μέρα</label><input type="number" id="sM" min="10" max="120" value="${SET.dailyMin || 25}"></div>
       <div class="field"><label>Η θεωρία να τελειώνει πόσες εβδομάδες πριν την εξέταση</label><input type="number" id="sW" min="4" max="20" value="${SET.theoryWeeks || 12}"><div class="small mute">Μετά ακολουθούν εξάσκηση και διαγωνίσματα. Αν η θεωρία τελειώσει νωρίτερα, η εξάσκηση ξεκινά νωρίτερα.</div></div>
       <div class="field"><label>Έναρξη προγράμματος</label><input type="date" id="sP" value="${esc(SET.planStart || '2026-11-02')}"></div>
