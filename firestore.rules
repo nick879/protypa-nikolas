@@ -1,21 +1,31 @@
 rules_version = '2';
-// Κανόνες ασφαλείας: μόνο τα τρία μέλη της οικογένειας διαβάζουν/γράφουν.
-// Επικόλληση: Firebase console → Firestore Database → Rules → Publish.
+// Κανόνες ασφαλείας Firestore.
+// Δεν περιέχουν email: μέλος της οικογένειας είναι όποιος έχει έγγραφο στο family/main/members/{email}.
+// Την πρώτη φορά, ο πρώτος γονιός που συνδέεται δημιουργεί το family/main/meta/owner και τα μέλη (οθόνη «Ρύθμιση οικογένειας»).
 service cloud.firestore {
   match /databases/{database}/documents {
-    function isFamily() {
-      return request.auth != null
-        && request.auth.token.email in [
-          '***',
-          '***',
-          '***'
-        ];
+    function signedIn() { return request.auth != null && request.auth.token.email != null; }
+    function me() { return request.auth.token.email.lower(); }
+    function memberPath() { return /databases/$(database)/documents/family/main/members/$(me()); }
+    function ownerPath() { return /databases/$(database)/documents/family/main/meta/owner; }
+    function isMember() { return signedIn() && exists(memberPath()); }
+    function isParent() { return isMember() && get(memberPath()).data.role == 'parent'; }
+    // Πρώτη ρύθμιση: δεν υπάρχει ακόμα owner και δημιουργείται στην ίδια ενέργεια από τον ίδιο χρήστη.
+    function settingUp() { return signedIn() && !exists(ownerPath()) && existsAfter(ownerPath()) && getAfter(ownerPath()).data.email == me(); }
+
+    match /family/main/meta/owner {
+      allow read: if signedIn();
+      allow create: if signedIn() && request.resource.data.email == me();
+      allow update, delete: if false;
     }
-    match /family/{rest=**} {
-      allow read, write: if isFamily();
+    match /family/main/members/{email} {
+      allow read: if isMember() || (signedIn() && email == me());
+      allow write: if isParent() || settingUp();
     }
-    match /{document=**} {
-      allow read, write: if false;
+    // Όλα τα υπόλοιπα (πρόοδος, ρυθμίσεις, ιστορικό, αναθέσεις, σημειώσεις): μόνο μέλη.
+    match /family/main/{coll}/{doc} {
+      allow read: if isMember();
+      allow write: if isMember() && coll != 'members' && !(coll == 'meta' && doc == 'owner');
     }
   }
 }

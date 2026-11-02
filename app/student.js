@@ -284,7 +284,7 @@ function reviewOne(id, a) {
   const q = QBY[id]; if (!q) return;
   modal(`${q.passage ? `<details><summary class="small mute">Κείμενο: «${esc(PBY[q.passage].title)}»</summary><div class="ptxt" style="font-size:15px">${paragraphs(PBY[q.passage].text)}</div></details>` : ''}${qBody(q)}
     <div class="opts">${q.options.map(o => `<div class="opt ro ${o.k === q.answer ? 'ok' : o.k === a ? 'bad' : ''}"><span class="k">${o.k}</span><span>${esc(o.t)}</span></div>`).join('')}</div>${explHTML(q, a === q.answer)}
-    <div class="row mt" style="justify-content:flex-end">${isParent() ? `<button class="btn ghost" onclick="closeModal();noteForm({qid:'${id}'})">💬 Σημείωση στον Νικόλα</button>` : ''}<button class="btn" onclick="closeModal()">Κλείσιμο</button></div>`);
+    <div class="row mt" style="justify-content:flex-end">${isParent() ? `<button class="btn ghost" onclick="closeModal();noteForm({qid:'${id}'})">💬 Σημείωση ${'σ' + sn('acc')}</button>` : ''}<button class="btn" onclick="closeModal()">Κλείσιμο</button></div>`);
 }
 
 /* ---------- Παιχνίδια ---------- */

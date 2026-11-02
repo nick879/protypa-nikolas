@@ -40,3 +40,7 @@ jobs:
           body: 'Κατέβασε το protypa.apk στο κινητό και άνοιξέ το για εγκατάσταση/ενημέρωση. Η πρόοδος δεν χάνεται.'
           files: protypa.apk
           make_latest: true
+      - name: Σβήσιμο παλιότερων εκδόσεων (κρατάμε μόνο την τελευταία)
+        env: { GH_TOKEN: '${{ github.token }}' }
+        run: |
+          gh release list --limit 200 --json tagName -q '.[].tagName' | grep '^apk-' | grep -v '^apk-${{ github.run_number }}$' | xargs -r -n1 gh release delete --yes --cleanup-tag || true

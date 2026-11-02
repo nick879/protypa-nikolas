@@ -1,4 +1,5 @@
-// Ρυθμίσεις Firebase και μέλη της οικογένειας.
+// Ρυθμίσεις Firebase. Για δική σας εγκατάσταση αλλάξτε αυτά τα στοιχεία (δείτε το README).
+// Τα μέλη της οικογένειας ΔΕΝ γράφονται εδώ· ορίζονται στην πρώτη σύνδεση και αποθηκεύονται στη βάση.
 // Το firebaseConfig ΔΕΝ είναι μυστικό: την πρόσβαση την ελέγχουν οι κανόνες (firestore.rules).
 window.APP_CONFIG = {
   firebase: {
@@ -10,10 +11,5 @@ window.APP_CONFIG = {
     appId: "1:961010023561:web:eed83598e7e0e37fb61a58"
   },
   // Διεύθυνση από όπου η εφαρμογή παίρνει νέο περιεχόμενο (GitHub Pages)
-  remoteBase: "https://nick879.github.io/protypa-nikolas/",
-  members: {
-    "***":            { role: "parent",  name: "Μπαμπάς", focus: "math" },
-    "***":     { role: "parent",  name: "Μαμά",    focus: "lang" },
-    "***":  { role: "student", name: "Νικόλας", vocative: "Νικόλα" }
-  }
+  remoteBase: "https://nick879.github.io/protypa-nikolas/"
 };

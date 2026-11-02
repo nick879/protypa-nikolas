@@ -77,16 +77,42 @@ function fbInit() {
   catch (e) { db = FB.initializeFirestore(fbApp, { localCache: FB.memoryLocalCache() }); }
 }
 const R = {
-  prog: () => FB.doc(db, 'family', 'main', 'progress', 'nikolas'),
+  prog: () => FB.doc(db, 'family', 'main', 'progress', 'main'),
+  progOld: () => FB.doc(db, 'family', 'main', 'progress', 'nikolas'), // παλιά θέση (μεταφέρεται αυτόματα)
   set: () => FB.doc(db, 'family', 'main', 'meta', 'settings'),
+  owner: () => FB.doc(db, 'family', 'main', 'meta', 'owner'),
+  member: email => FB.doc(db, 'family', 'main', 'members', email),
+  members: () => FB.collection(db, 'family', 'main', 'members'),
   col: name => FB.collection(db, 'family', 'main', name),
   doc: (name, id) => FB.doc(db, 'family', 'main', name, id)
 };
+/* ---------- Μέλη οικογένειας (αποθηκεύονται στη βάση, όχι στον κώδικα) ---------- */
+let MEMBERS = {};
+function studentMember() { return Object.values(MEMBERS).find(m => m.role === 'student') || (USER && USER.role === 'student' ? USER : null); }
+// Όνομα του παιδιού με άρθρο: sn('nom') → «ο Νικόλας», sn('gen') → «του Νικόλα», sn('acc') → «τον Νικόλα», sn('voc') → «Νικόλα»
+function sn(c, cap) {
+  const m = studentMember() || { name: 'μαθητής', gender: 'm' };
+  const f = m.gender === 'f';
+  const forms = { nom: m.name, gen: m.gen || m.name, acc: m.acc || m.name, voc: m.vocative || m.name };
+  const art = { nom: f ? 'η' : 'ο', gen: f ? 'της' : 'του', acc: f ? 'την' : 'τον', voc: '' }[c];
+  let out = (art ? art + ' ' : '') + forms[c];
+  return cap ? out.charAt(0).toUpperCase() + out.slice(1) : out;
+}
+// Πρόταση πτώσεων από την ονομαστική (μπορεί να διορθωθεί στη φόρμα)
+function nameForms(n, g) {
+  n = (n || '').trim(); const r = (a, b) => n.slice(0, -a.length) + b;
+  if (g === 'f') { if (/α$/.test(n)) return { gen: r('α', 'ας'), acc: n, vocative: n }; if (/η$/.test(n)) return { gen: r('η', 'ης'), acc: n, vocative: n }; return { gen: n, acc: n, vocative: n }; }
+  if (/ας$/.test(n)) return { gen: r('ας', 'α'), acc: r('ας', 'α'), vocative: r('ας', 'α') };
+  if (/ης$/.test(n)) return { gen: r('ης', 'η'), acc: r('ης', 'η'), vocative: r('ης', 'η') };
+  if (/ος$/.test(n)) return { gen: r('ος', 'ου'), acc: r('ος', 'ο'), vocative: r('ος', 'ε') };
+  return { gen: n, acc: n, vocative: n };
+}
 function emptyProg() { return { qs: {}, xp: 0, games: {}, lessons: {}, tests: {}, updatedAt: 0 }; }
 function startListeners() {
   unsubs.forEach(u => u()); unsubs = [];
   const onErr = e => { console.warn(e); if (e.code === 'permission-denied') { render(`<div class="card mt2"><h3>Δεν υπάρχει πρόσβαση</h3><p>Οι κανόνες της βάσης δεν επιτρέπουν σε αυτόν τον λογαριασμό να δει τα δεδομένα. Ο γονιός πρέπει να ενημερώσει τους κανόνες στο Firebase (δες το README).</p><button class="btn" onclick="logout()">Αποσύνδεση</button></div>`); } };
   unsubs.push(FB.onSnapshot(R.prog(), s => { PROG_SERVER = Object.assign(emptyProg(), s.exists() ? s.data() : {}); if (PROG_SERVER.resetAt && PROG && (PROG.resetAt || 0) < PROG_SERVER.resetAt) { progDirty = false; clearTimeout(progTimer); IDB.put('exam-run', null); } if (!progDirty && !STUDENT_PREVIEW) { PROG = JSON.parse(JSON.stringify(PROG_SERVER)); softRefresh(); } }, onErr));
+  unsubs.push(FB.onSnapshot(R.members(), s => { MEMBERS = Object.fromEntries(s.docs.map(d => [d.id, d.data()])); if (MEMBERS[USER.email]) Object.assign(USER, MEMBERS[USER.email]); const mb = $('#memBox'); if (mb && window.membersHTML) mb.innerHTML = membersHTML(); softRefresh(); }, onErr));
   unsubs.push(FB.onSnapshot(R.set(), s => { SET = s.exists() ? s.data() : {}; softRefresh(); }, onErr));
   const q = (n, lim) => FB.query(R.col(n), FB.orderBy('ts', 'desc'), FB.limit(lim));
   unsubs.push(FB.onSnapshot(q('sessions', 500), s => { SESS = s.docs.map(d => ({ id: d.id, ...d.data() })); softRefresh(); }, onErr));
@@ -144,7 +170,7 @@ function logSession(o) {
 }
 
 /* ---------- Πρόγραμμα μελέτης (δυναμικό) ----------
-   Το πρόγραμμα δεν είναι δεμένο με εβδομάδες: ο Νικόλας προχωρά στο επόμενο κεφάλαιο μόλις «κλείσει» το τρέχον
+   Το πρόγραμμα δεν είναι δεμένο με εβδομάδες: το παιδί προχωρά στο επόμενο κεφάλαιο μόλις «κλείσει» το τρέχον
    (όλα τα μαθήματα θεωρίας + τεστ κεφαλαίου ≥ PASS%). Οι ημερομηνίες χρησιμοποιούνται μόνο για να συγκρίνουμε
    τον πραγματικό ρυθμό με τον αναμενόμενο (μπροστά / στον στόχο / πίσω). */
 const PASS = 70;
@@ -299,7 +325,7 @@ function updateTabs() {
   const unreadNotes = isStudent() ? NOTES.filter(n => !n.seen).length : 0;
   const openTasks = isStudent() ? TASKS.filter(t => t.status !== 'done').length : 0;
   $('#tabsIn').innerHTML = tabs.map(([k, i, l]) => `<button class="${base === k || (k === 'practice' && base === 'reading') ? 'on' : ''}" onclick="go('${k}')"><span class="i">${i}</span>${l}${k === 'home' && (unreadNotes || openTasks) ? '<span class="dot"></span>' : ''}</button>`).join('');
-  $('#tabs').classList.toggle('hide', !USER || ['quiz', 'exam', 'game', 'login', 'lesson'].includes(CUR));
+  $('#tabs').classList.toggle('hide', !USER || ['quiz', 'exam', 'game', 'login', 'lesson', 'setup'].includes(CUR));
   const wb = $('#whoBtn');
   if (USER) { wb.classList.remove('hide'); wb.innerHTML = (isParent() ? (STUDENT_PREVIEW ? '👀 προβολή μαθητή · ' : '👤 ') : '🦉 ') + esc(USER.name); } else wb.classList.add('hide');
 }
@@ -334,11 +360,11 @@ VIEWS.login = function () {
 VIEWS.account = function () {
   render(`<h1>Λογαριασμός</h1><div class="card"><p style="margin-top:0"><b>${esc(USER.name)}</b><br><span class="mute small">${esc(USER.email)}</span></p>
     <p class="small mute">Περιεχόμενο: έκδοση ${C.version} · ${Q.length} ερωτήσεις · ${C.theory.length} κεφάλαια θεωρίας</p>
-    <div class="row">${isParent() ? `<button class="btn soft" onclick="togglePreview()">${STUDENT_PREVIEW ? '↩︎ Πίσω στην οθόνη γονέα' : '👀 Δες την εφαρμογή όπως ο Νικόλας'}</button>` : ''}
+    <div class="row">${isParent() ? `<button class="btn soft" onclick="togglePreview()">${STUDENT_PREVIEW ? '↩︎ Πίσω στην οθόνη γονέα' : '👀 Δες την εφαρμογή όπως ' + sn('nom')}</button>` : ''}
     <button class="btn ghost" onclick="checkRemoteContent().then(()=>toast('Έλεγχος για νέο περιεχόμενο: έγινε'))">⟳ Έλεγχος για νέο περιεχόμενο</button>
     <button class="btn ghost" onclick="go('info')">ℹ️ Για την εξέταση</button>
     <button class="btn danger" onclick="logout()">Αποσύνδεση</button></div></div>
-    ${isParent() && STUDENT_PREVIEW ? '<p class="small mute">Στην προβολή μαθητή ό,τι απαντήσεις ΔΕΝ μετράει στην πρόοδο του Νικόλα.</p>' : ''}`);
+    ${isParent() && STUDENT_PREVIEW ? `<p class="small mute">Στην προβολή μαθητή ό,τι απαντήσεις ΔΕΝ μετράει στην πρόοδο ${sn('gen')}.</p>` : ''}`);
 };
 
 /* ---------- Εκκίνηση ---------- */
@@ -348,14 +374,63 @@ async function boot() {
   setNet();
   try { await loadContent(); } catch (e) { render(`<div class="card mt2">Δεν φορτώθηκε το περιεχόμενο. Έλεγξε τη σύνδεση και άνοιξε ξανά την εφαρμογή.</div>`); return; }
   fbInit();
-  FB.onAuthStateChanged(auth, u => {
-    if (!u) { USER = null; PROG = null; CUR = 'login'; updateTabs(); VIEWS.login(); return; }
-    const m = CFG.members[(u.email || '').toLowerCase()];
-    if (!m) { render(`<div class="card mt2"><h3>Ο λογαριασμός ${esc(u.email)} δεν ανήκει στην οικογένεια.</h3><button class="btn" onclick="logout()">Αποσύνδεση</button></div>`); return; }
-    USER = Object.assign({ email: u.email.toLowerCase(), uid: u.uid }, m);
+  FB.onAuthStateChanged(auth, async u => {
+    if (!u) { USER = null; PROG = null; MEMBERS = {}; CUR = 'login'; updateTabs(); VIEWS.login(); return; }
+    const email = (u.email || '').toLowerCase();
+    render('<div class="center mt2 mute">Φόρτωση…</div>');
+    let m = null;
+    try { const d = await FB.getDoc(R.member(email)); if (d.exists()) m = d.data(); } catch (e) { console.warn(e); }
+    if (!m) {
+      let hasOwner = true;
+      try { hasOwner = (await FB.getDoc(R.owner())).exists(); } catch (e) { console.warn(e); }
+      if (!hasOwner) { USER = { email, uid: u.uid, role: 'setup', name: '' }; CUR = 'setup'; updateTabs(); VIEWS.setup(); return; }
+      render(`<div class="card mt2"><h3>Ο λογαριασμός ${esc(email)} δεν είναι μέλος της οικογένειας.</h3><p class="small">Ένας γονιός μπορεί να τον προσθέσει από τις Ρυθμίσεις → «Μέλη οικογένειας».</p><button class="btn" onclick="logout()">Αποσύνδεση</button></div>`); return;
+    }
+    USER = Object.assign({ email, uid: u.uid }, m);
     PROG = emptyProg();
     startListeners();
+    migrateProgress();
     history.replaceState(null, '', '#home'); CUR = 'home'; route();
   });
+}
+// Μία φορά: η πρόοδος μεταφέρεται από την παλιά θέση (progress/nikolas) στη νέα (progress/main)
+async function migrateProgress() {
+  try {
+    const n = await FB.getDoc(R.prog()); if (n.exists()) return;
+    const o = await FB.getDoc(R.progOld()); if (o.exists()) { await FB.setDoc(R.prog(), o.data()); console.log('progress migrated'); }
+  } catch (e) { console.warn(e); }
+}
+/* ---------- Πρώτη ρύθμιση οικογένειας ---------- */
+VIEWS.setup = function () {
+  const row = (k, title, role, extra) => `<div class="card mt"><h3 style="margin-top:0">${title}</h3>
+    ${k !== 'me' ? `<div class="field"><label>Email (όπως είναι στο Firebase → Authentication)</label><input type="email" id="${k}E" autocomplete="off"></div>` : `<div class="small mute" style="margin-bottom:8px">${esc(USER.email)}</div>`}
+    <div class="field"><label>${role === 'student' ? 'Όνομα (ονομαστική), π.χ. Νικόλας' : 'Πώς θα εμφανίζεται, π.χ. Μπαμπάς'}</label><input type="text" id="${k}N" ${role === 'student' ? `oninput="setupForms('${k}')"` : ''}></div>${extra || ''}</div>`;
+  const focus = k => `<div class="field"><label>Εστίαση στην Επισκόπηση</label><select id="${k}F"><option value="math">Μαθηματικά</option><option value="lang">Γλώσσα</option></select></div>`;
+  const student = `<div class="field"><label>Φύλο (για τα άρθρα: ο/η, του/της)</label><select id="stG" onchange="setupForms('st')"><option value="m">Αγόρι</option><option value="f">Κορίτσι</option></select></div>
+    <div class="row"><div class="field grow"><label>Γενική (του …)</label><input type="text" id="stGen"></div><div class="field grow"><label>Αιτιατική (τον …)</label><input type="text" id="stAcc"></div><div class="field grow"><label>Κλητική (Γεια σου, …)</label><input type="text" id="stVoc"></div></div>`;
+  render(`<h1>Ρύθμιση οικογένειας</h1><p class="sub">Πρώτη σύνδεση: ορίστε ποιοι χρησιμοποιούν την εφαρμογή. Τα στοιχεία αποθηκεύονται μόνο στη δική σας βάση (Firebase), όχι στον κώδικα. Μπορείτε να τα αλλάξετε αργότερα από τις Ρυθμίσεις.</p>
+    ${row('me', 'Εσείς (γονιός)', 'parent', focus('me'))}
+    ${row('st', 'Ο μαθητής / η μαθήτρια', 'student', student)}
+    ${row('p2', 'Δεύτερος γονιός (προαιρετικό)', 'parent', focus('p2'))}
+    <p class="small mute">Κάθε email πρέπει να υπάρχει ως χρήστης στο Firebase → Authentication → Users.</p>
+    <div class="row mt"><button class="btn" id="stSave" onclick="saveSetup()">Αποθήκευση</button><button class="btn ghost" onclick="logout()">Αποσύνδεση</button></div>`);
+};
+function setupForms(k) { const n = $('#' + k + 'N').value; const f = nameForms(n, $('#stG').value); $('#stGen').value = f.gen; $('#stAcc').value = f.acc; $('#stVoc').value = f.vocative; }
+async function saveSetup() {
+  const v = id => ($('#' + id) ? $('#' + id).value.trim() : '');
+  const me = { role: 'parent', name: v('meN') || 'Γονιός', focus: v('meF') || 'math' };
+  const stE = v('stE').toLowerCase(), p2E = v('p2E').toLowerCase();
+  if (!stE || !v('stN')) { toast('Συμπληρώστε email και όνομα του μαθητή'); return; }
+  const st = { role: 'student', name: v('stN'), gender: v('stG') || 'm', gen: v('stGen') || v('stN'), acc: v('stAcc') || v('stN'), vocative: v('stVoc') || v('stN') };
+  $('#stSave').disabled = true;
+  try {
+    const b = FB.writeBatch(db);
+    b.set(R.owner(), { email: USER.email, ts: Date.now() });
+    b.set(R.member(USER.email), me);
+    b.set(R.member(stE), st);
+    if (p2E) b.set(R.member(p2E), { role: 'parent', name: v('p2N') || 'Γονιός', focus: v('p2F') || 'lang' });
+    await b.commit();
+    toast('Έτοιμο!'); location.reload();
+  } catch (e) { $('#stSave').disabled = false; toast('Δεν αποθηκεύτηκε: ' + e.message, 6000); }
 }
 document.addEventListener('DOMContentLoaded', boot);

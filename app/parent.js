@@ -18,7 +18,7 @@ VIEWS['p-home'] = function () {
   const st = { lang: subjectStats('lang'), math: subjectStats('math') };
   const open = TASKS.filter(t => t.status !== 'done'), done = TASKS.filter(t => t.status === 'done').slice(0, 3);
   const lastMock = MOCKS[0];
-  render(`<h1>Πρόοδος του Νικόλα</h1><p class="sub">${daysToExam()} μέρες ως την εξέταση · ${fmtDate(parseDay(examDate()), { day: 'numeric', month: 'long', year: 'numeric' })}${C.exam.dateEstimated && !SET.examDate ? ' (εκτίμηση)' : ''}</p>
+  render(`<h1>Πρόοδος ${sn('gen')}</h1><p class="sub">${daysToExam()} μέρες ως την εξέταση · ${fmtDate(parseDay(examDate()), { day: 'numeric', month: 'long', year: 'numeric' })}${C.exam.dateEstimated && !SET.examDate ? ' (εκτίμηση)' : ''}</p>
     <div class="card hero"><div class="lab" style="color:rgba(255,255,255,.8)">Τρέχον κεφάλαιο${SET.currentChapter === ch ? ' (το ορίσατε εσείς)' : ''}</div>
       <div class="big">${esc(th ? th.title : TOP[ch].name)}</div><div class="mute">${SUBJ[TOP[ch].subject]} · μαθήματα ${cp.lessonsDone}/${cp.lessons}${cp.test ? ` · τεστ ${bestTest(ch)}% (θέλει ${PASS}%)` : ' · τεστ: όχι ακόμα'}${cp.stats.acc !== null ? ` · ${Math.round(cp.stats.acc * 100)}% σωστές στην ενότητα` : ''}</div>
       <div class="row mt"><button class="btn sm" style="background:#fff;color:var(--acc)" onclick="go('chapter','${ch}')">Θεωρία & οδηγός γονέα</button><button class="btn sm" style="background:rgba(255,255,255,.18)" onclick="taskForm({action:'chapter:${ch}',title:'Θεωρία: ${esc(TOP[ch].name)}'})">📌 Ανάθεση</button></div></div>
@@ -34,7 +34,7 @@ VIEWS['p-home'] = function () {
     <details class="mt"><summary class="small"><b>${SUBJ[other]}</b></summary><div class="card mt">${topicBars(other)}</div></details>
     <h2>Αναθέσεις</h2><div class="card">${open.length ? open.map(t => `<div class="list-item"><span class="grow"><b>${esc(t.title)}</b><div class="small mute">${esc(t.byName)}${t.due ? ' · ως ' + fmtDate(parseDay(t.due), { day: 'numeric', month: 'short' }) : ''}</div></span><span class="tag exam">σε εκκρεμότητα</span></div>`).join('') : '<div class="small mute">Καμία ανοιχτή ανάθεση.</div>'}
       ${done.map(t => `<div class="list-item"><span class="grow"><b>${esc(t.title)}</b><div class="small mute">έγινε ${t.doneTs ? fmtDate(t.doneTs, { day: 'numeric', month: 'short' }) : ''}${t.result ? ' · ' + esc(t.result) : ''}</div></span><span class="pill-ok">✓</span></div>`).join('')}
-      <div class="row mt"><button class="btn sm" onclick="taskForm({})">📌 Νέα ανάθεση</button><button class="btn sm ghost" onclick="noteForm({})">💬 Σημείωση στον Νικόλα</button></div></div>
+      <div class="row mt"><button class="btn sm" onclick="taskForm({})">📌 Νέα ανάθεση</button><button class="btn sm ghost" onclick="noteForm({})">💬 Σημείωση ${'σ' + sn('acc')}</button></div></div>
     <h2>Πρόσφατη δουλειά</h2><div class="card">${SESS.length ? SESS.slice(0, 8).map(sessLine).join('') : '<div class="small mute">Δεν έχει δουλέψει ακόμα.</div>'}<div class="row mt"><button class="btn sm ghost" onclick="go('history')">Όλο το ιστορικό →</button></div></div>
     ${lastMock ? `<h2>Τελευταίο διαγώνισμα</h2><div class="card"><div class="list-item"><span class="grow"><b>${esc(lastMock.title)}</b><div class="small mute">${fmtDate(lastMock.ts, { day: 'numeric', month: 'short' })} · Γλ. ${lastMock.langPct ?? '—'}% · Μαθ. ${lastMock.mathPct ?? '—'}%</div></span><b>${lastMock.score}/${lastMock.max}</b><button class="btn ghost sm" onclick="showMockResult('${lastMock.id}')">Δες</button></div></div>` : ''}`);
 };
@@ -47,7 +47,7 @@ function topicBars(sj) {
 /* ---------- Κεφάλαια ---------- */
 VIEWS['p-chapters'] = function () {
   const P = planInfo();
-  render(`<h1>Κεφάλαια</h1><p class="sub">Η σειρά που ακολουθεί ο Νικόλας, πού βρίσκεται και πότε αναμένεται να κλείσει κάθε κεφάλαιο με τον ρυθμό που χρειάζεται. Πατήστε ένα κεφάλαιο για θεωρία και οδηγό γονέα.</p>
+  render(`<h1>Κεφάλαια</h1><p class="sub">Η σειρά που ακολουθεί ${sn('nom')}, πού βρίσκεται και πότε αναμένεται να κλείσει κάθε κεφάλαιο με τον ρυθμό που χρειάζεται. Πατήστε ένα κεφάλαιο για θεωρία και οδηγό γονέα.</p>
     ${paceCard(P)}
     <div class="row mt"><button class="btn sm soft" onclick="go('settings');setTimeout(()=>{const e=document.getElementById('ordEd');e&&e.scrollIntoView()},300)">↕️ Αλλαγή σειράς / τι έχει διδαχθεί</button><button class="btn sm ghost" onclick="go('library')">📁 Αρχείο θεμάτων & βιβλίων</button></div>
     <div class="card mt">${planChaptersHTML(P, true)}</div>
@@ -78,11 +78,11 @@ function parentChapterBox(id) {
     ${ls.length ? `<h2>Μαθήματα με γονιό</h2><div class="card">${ls.map(l => `<div class="list-item"><span class="small mute" style="width:80px">${fmtDate(parseDay(l.date), { day: 'numeric', month: 'short' })}</span><span class="grow"><b>${esc(l.byName)}</b> · ${l.minutes || '?'}′<div class="small">${md(l.text || '')}</div></span></div>`).join('')}</div>` : ''}`;
 }
 function lessonForm(ch) {
-  modal(`<h3 style="margin-top:0">Μάθημα με τον Νικόλα</h3><div class="small mute">${esc(TOP[ch].name)}</div>
+  modal(`<h3 style="margin-top:0">Μάθημα με ${sn('acc')}</h3><div class="small mute">${esc(TOP[ch].name)}</div>
     <div class="field mt"><label>Ημερομηνία</label><input type="date" id="lfD" value="${todayStr()}"></div>
     <div class="field"><label>Λεπτά</label><input type="number" id="lfM" value="30" min="5" max="240"></div>
     <div class="field"><label>Τι κάνατε / τι παρατηρήσατε</label><textarea id="lfT" placeholder="π.χ. δουλέψαμε τις αντωνυμίες στο κείμενο της σελ. 34· μπερδεύει ακόμα το «του» με το «τού»"></textarea></div>
-    <label class="row small"><input type="checkbox" id="lfN"> Να το δει και ο Νικόλας ως σημείωση</label>
+    <label class="row small"><input type="checkbox" id="lfN"> Να το δει και ${sn('nom')} ως σημείωση</label>
     <div class="row mt" style="justify-content:flex-end"><button class="btn ghost" onclick="closeModal()">Άκυρο</button><button class="btn" onclick="saveLessonForm('${ch}')">Αποθήκευση</button></div>`);
 }
 function saveLessonForm(ch) {
@@ -114,14 +114,14 @@ function taskForm(pre) {
 function saveTask() {
   const action = $('#tfA').value || null; const title = $('#tfT').value.trim() || ($('#tfA').selectedOptions[0] || {}).text || 'Εργασία';
   addDocTo('tasks', { action, title, text: $('#tfX').value.trim(), due: $('#tfD').value || null, status: 'open' });
-  closeModal(); toast('Ανατέθηκε στον Νικόλα'); route(true);
+  closeModal(); toast('Ανατέθηκε σ' + sn('acc')); route(true);
 }
 VIEWS['p-tasks'] = function () {
   const open = TASKS.filter(t => t.status !== 'done'), done = TASKS.filter(t => t.status === 'done');
   const row = t => `<div class="list-item"><span class="grow"><b>${esc(t.title)}</b><div class="small mute">${esc(t.byName)} · ${fmtDate(t.ts, { day: 'numeric', month: 'short' })}${t.due ? ' · ως ' + fmtDate(parseDay(t.due), { day: 'numeric', month: 'short' }) : ''}${t.text ? ' · «' + esc(t.text) + '»' : ''}</div>
     ${t.status === 'done' ? `<div class="small">✓ έγινε ${t.doneTs ? fmtDate(t.doneTs, { day: 'numeric', month: 'short' }) + ' ' + fmtTime(t.doneTs) : ''}${t.result ? ' · <b>' + esc(t.result) + '</b>' : ''}</div>` : ''}</span>
     <button class="btn ghost sm" onclick="confirmBox('Διαγραφή της ανάθεσης;','Διαγραφή',()=>delDoc('tasks','${t.id}'),true)">🗑</button></div>`;
-  render(`<h1>Αναθέσεις</h1><p class="sub">Ό,τι αναθέτετε εμφανίζεται πρώτο στην αρχική του Νικόλα. Όταν το ολοκληρώσει, σημειώνεται μόνο του με το αποτέλεσμα.</p>
+  render(`<h1>Αναθέσεις</h1><p class="sub">Ό,τι αναθέτετε εμφανίζεται πρώτο στην αρχική ${sn('gen')}. Όταν το ολοκληρώσει, σημειώνεται μόνο του με το αποτέλεσμα.</p>
     <button class="btn" onclick="taskForm({})">📌 Νέα ανάθεση</button>
     <h2>Ανοιχτές (${open.length})</h2><div class="card">${open.length ? open.map(row).join('') : '<div class="small mute">Καμία.</div>'}</div>
     <h2>Ολοκληρωμένες</h2><div class="card">${done.length ? done.slice(0, 40).map(row).join('') : '<div class="small mute">Καμία ακόμα.</div>'}</div>
@@ -129,7 +129,7 @@ VIEWS['p-tasks'] = function () {
 };
 function noteForm(o) {
   o = o || {}; const q = o.qid && QBY[o.qid];
-  modal(`<h3 style="margin-top:0">Σημείωση στον Νικόλα</h3>${q ? `<div class="small mute">Για την ερώτηση: ${esc(q.srcLabel)} — «${esc(q.stem.slice(0, 80))}…»</div>` : ''}
+  modal(`<h3 style="margin-top:0">Σημείωση ${'σ' + sn('acc')}</h3>${q ? `<div class="small mute">Για την ερώτηση: ${esc(q.srcLabel)} — «${esc(q.stem.slice(0, 80))}…»</div>` : ''}
     <div class="field mt"><textarea id="nfT" placeholder="Γράψε κάτι ενθαρρυντικό ή μια εξήγηση…"></textarea></div>
     <div class="row" style="justify-content:flex-end"><button class="btn ghost" onclick="closeModal()">Άκυρο</button><button class="btn" onclick="saveNote(${o.qid ? `'${o.qid}'` : 'null'},${o.chapter ? `'${o.chapter}'` : 'null'})">Αποστολή</button></div>`);
   setTimeout(() => $('#nfT') && $('#nfT').focus(), 50);
@@ -168,9 +168,10 @@ VIEWS['p-settings'] = function () {
     <h2 id="ordEd">Σειρά κεφαλαίων</h2><div id="ordBox">${orderEditorHTML()}</div>
     <h2>Περιεχόμενο</h2><div class="card small">Έκδοση <b>${C.version}</b> · ${Q.length} ερωτήσεις (${Q.filter(q => q.kind === 'exam').length} από εξετάσεις, ${Q.filter(q => q.kind === 'indicative' || q.kind === 'collection').length} ενδεικτικές, ${Q.filter(q => q.kind === 'new').length} νέες εξάσκησης) · ${C.passages.length} κείμενα · ${C.theory.length} κεφάλαια θεωρίας.
       <div class="mt">Το νέο περιεχόμενο κατεβαίνει μόνο του όταν ανοίγει η εφαρμογή· η πρόοδος δεν χάνεται.</div><button class="btn sm ghost mt" onclick="checkRemoteContent().then(()=>toast('Έγινε έλεγχος'))">⟳ Έλεγχος τώρα</button></div>
-    <h2>Μηδενισμός</h2><div class="card small"><p style="margin-top:0">Σβήνει <b>όλη την πρόοδο</b> του Νικόλα (απαντήσεις, μαθήματα, τεστ, διαγωνίσματα, ιστορικό, αναθέσεις, σημειώσεις, «κάναμε μάθημα») και το πρόγραμμα ξεκινά από σήμερα. Η σειρά κεφαλαίων, η ημερομηνία εξέτασης και οι υπόλοιπες ρυθμίσεις μένουν. Δεν αναιρείται.</p>
+    <h2>Μέλη οικογένειας</h2><div id="memBox">${membersHTML()}</div>
+    <h2>Μηδενισμός</h2><div class="card small"><p style="margin-top:0">Σβήνει <b>όλη την πρόοδο</b> ${sn('gen')} (απαντήσεις, μαθήματα, τεστ, διαγωνίσματα, ιστορικό, αναθέσεις, σημειώσεις, «κάναμε μάθημα») και το πρόγραμμα ξεκινά από σήμερα. Η σειρά κεφαλαίων, η ημερομηνία εξέτασης και οι υπόλοιπες ρυθμίσεις μένουν. Δεν αναιρείται.</p>
       <button class="btn danger" onclick="resetAskAll()">🗑 Μηδενισμός προόδου</button></div>
-    <h2>Λογαριασμός</h2><div class="card"><div class="small">${esc(USER.name)} · ${esc(USER.email)}</div><div class="row mt"><button class="btn soft" onclick="togglePreview()">👀 Δες την εφαρμογή όπως ο Νικόλας</button><button class="btn danger" onclick="logout()">Αποσύνδεση</button></div></div>`);
+    <h2>Λογαριασμός</h2><div class="card"><div class="small">${esc(USER.name)} · ${esc(USER.email)}</div><div class="row mt"><button class="btn soft" onclick="togglePreview()">👀 Δες την εφαρμογή όπως ${sn('nom')}</button><button class="btn danger" onclick="logout()">Αποσύνδεση</button></div></div>`);
 };
 function assignWrong(sid) {
   const s = SESS.find(x => x.id === sid); const ids = (s.answers || []).filter(a => !a.ok).map(a => a.q);
@@ -183,7 +184,7 @@ function orderEditorHTML() {
   if (!ORD) { ORD = chapterOrder(); TAUGHT = Object.assign({}, SET.taught || {}); }
   const pos = id => ORD.indexOf(id);
   const changed = JSON.stringify(ORD) !== JSON.stringify(chapterOrder()) || JSON.stringify(TAUGHT) !== JSON.stringify(SET.taught || {});
-  return `<div class="card"><p class="small" style="margin-top:0">Ο Νικόλας δουλεύει τα κεφάλαια με αυτή τη σειρά, ένα τη φορά. Τα κεφάλαια είναι ανεξάρτητα, οπότε <b>οποιαδήποτε σειρά δουλεύει</b>· η εφαρμογή απλώς προειδοποιεί αν κάτι μπαίνει πριν από κάτι που συνήθως χρειάζεται πρώτα. Η πρόοδος δεν επηρεάζεται. Αν ένα κεφάλαιο έχει ήδη ξεκινήσει, ολοκληρώνεται πρώτα και μετά ακολουθείται η νέα σειρά.</p>
+  return `<div class="card"><p class="small" style="margin-top:0">${sn('nom', 1)} δουλεύει τα κεφάλαια με αυτή τη σειρά, ένα τη φορά. Τα κεφάλαια είναι ανεξάρτητα, οπότε <b>οποιαδήποτε σειρά δουλεύει</b>· η εφαρμογή απλώς προειδοποιεί αν κάτι μπαίνει πριν από κάτι που συνήθως χρειάζεται πρώτα. Η πρόοδος δεν επηρεάζεται. Αν ένα κεφάλαιο έχει ήδη ξεκινήσει, ολοκληρώνεται πρώτα και μετά ακολουθείται η νέα σειρά.</p>
     ${ORD.map((id, i) => { const deps = (CH_DEPS[id] || []).filter(d => pos(d) > i && !chapterDone(d)); const st = chapterState(id);
       return `<div class="list-item"><span style="width:22px;font-weight:800">${i + 1}</span><span class="grow"><b>${esc(TOP[id].name)}</b> <span class="small mute">${SUBJ[TOP[id].subject]}${st === 'done' ? ' · ✓ ολοκληρωμένο' : st === 'started' ? ' · σε εξέλιξη' : ''}</span>
         <label class="small row" style="gap:6px;margin-top:2px"><input type="checkbox" ${TAUGHT[id] ? 'checked' : ''} onchange="TAUGHT['${id}']=this.checked;if(!this.checked)delete TAUGHT['${id}'];refreshOrd()"> το έχει διδαχθεί στο σχολείο</label>
@@ -200,7 +201,7 @@ function saveOrd() { setSettings({ chapterOrder: ORD, taught: TAUGHT }); ORD = n
 
 /* ---------- Μηδενισμός ---------- */
 function resetAskAll() {
-  modal(`<h3 style="margin-top:0">Μηδενισμός όλης της προόδου</h3><p class="small">Θα σβηστούν οριστικά όλα τα δεδομένα προόδου του Νικόλα και το πρόγραμμα θα ξεκινήσει από σήμερα (${fmtDate(new Date(), { day: 'numeric', month: 'long' })}). Γράψε <b>ΜΗΔΕΝΙΣΜΟΣ</b> για επιβεβαίωση.</p>
+  modal(`<h3 style="margin-top:0">Μηδενισμός όλης της προόδου</h3><p class="small">Θα σβηστούν οριστικά όλα τα δεδομένα προόδου ${sn('gen')} και το πρόγραμμα θα ξεκινήσει από σήμερα (${fmtDate(new Date(), { day: 'numeric', month: 'long' })}). Γράψε <b>ΜΗΔΕΝΙΣΜΟΣ</b> για επιβεβαίωση.</p>
     <div class="field"><input type="text" id="rsT" autocomplete="off"></div>
     <div class="row" style="justify-content:flex-end"><button class="btn ghost" onclick="closeModal()">Άκυρο</button><button class="btn danger" onclick="if($('#rsT').value.trim().normalize('NFD').replace(/[\u0300-\u036f]/g,'').toUpperCase()==='ΜΗΔΕΝΙΣΜΟΣ')resetAll();else toast('Γράψε ΜΗΔΕΝΙΣΜΟΣ')">Μηδενισμός</button></div>`);
 }
@@ -222,7 +223,7 @@ async function resetAll() {
 /* ---------- Ώρες διαβάσματος ανά ημέρα ---------- */
 function scheduleEditorHTML() {
   const sch = SET.schedule || {}; const order = [1, 2, 3, 4, 5, 6, 0];
-  return `<div class="card"><p class="small" style="margin-top:0">Ορίστε τι ώρα θα διαβάζει ο Νικόλας κάθε μέρα. Εκείνη την ώρα το κινητό του (Android) θα του βγάλει ειδοποίηση με τη σημερινή του εργασία. Αφήστε κενό τις μέρες χωρίς διάβασμα. Αν έχει ήδη πιάσει τον στόχο λεπτών πριν την ώρα, η ειδοποίηση δεν έρχεται.</p>
+  return `<div class="card"><p class="small" style="margin-top:0">Ορίστε τι ώρα θα διαβάζει ${sn('nom')} κάθε μέρα. Εκείνη την ώρα το κινητό του (Android) θα του βγάλει ειδοποίηση με τη σημερινή του εργασία. Αφήστε κενό τις μέρες χωρίς διάβασμα. Αν έχει ήδη πιάσει τον στόχο λεπτών πριν την ώρα, η ειδοποίηση δεν έρχεται.</p>
     ${order.map(d => `<div class="list-item" style="padding:6px 0"><span style="width:96px;font-weight:700">${DAY_NAMES[d]}</span><input type="time" id="sch${d}" value="${esc(sch[d] || '')}" style="max-width:130px"><button class="btn ghost sm" onclick="$('#sch${d}').value=''">✕</button><span class="grow"></span></div>`).join('')}
     <div class="row mt"><button class="btn sm ghost" onclick="[2,3,4,5].forEach(d=>$('#sch'+d).value=$('#sch1').value)">Ίδια ώρα Δευτ.–Παρ.</button></div>
     <div class="field mt"><label>Δεύτερη υπενθύμιση, αν δεν έχει διαβάσει καθόλου εκείνη τη μέρα (προαιρετικό)</label><div class="row" style="flex-wrap:nowrap"><input type="time" id="schLate" value="${esc(SET.reminderLate || '')}" style="max-width:130px"><button class="btn ghost sm" onclick="$('#schLate').value=''">✕</button></div></div>
@@ -232,4 +233,31 @@ function scheduleEditorHTML() {
 function saveSchedule() {
   const sch = {}; [0, 1, 2, 3, 4, 5, 6].forEach(d => { const v = $('#sch' + d).value; if (v) sch[d] = v; });
   FB.setDoc(R.set(), { schedule: sch, reminderLate: $('#schLate').value || null }, { merge: true }).then(() => toast('Οι ώρες αποθηκεύτηκαν')).catch(e => toast('Σφάλμα: ' + e.message));
+}
+
+/* ---------- Μέλη οικογένειας ---------- */
+function membersHTML() {
+  const rows = Object.entries(MEMBERS).sort((a, b) => (a[1].role === 'student') - (b[1].role === 'student'));
+  return `<div class="card"><p class="small" style="margin-top:0">Ποιοι έχουν πρόσβαση. Κάθε email πρέπει να υπάρχει και ως χρήστης στο Firebase → Authentication → Users (εκεί ορίζεται ο κωδικός).</p>
+    ${rows.map(([e, m]) => `<div class="list-item"><span class="grow"><b>${esc(m.name)}</b> <span class="tag">${m.role === 'student' ? 'μαθητής' : 'γονιός'}</span>${m.role === 'parent' ? ` <span class="small mute">εστίαση: ${SUBJ[m.focus] || '—'}</span>` : ''}<div class="small mute">${esc(e)}</div></span>
+      <button class="btn ghost sm" onclick="memberForm('${esc(e)}')">✏️</button>${e !== USER.email ? `<button class="btn ghost sm" onclick="confirmBox('Αφαίρεση του ${esc(e)} από την οικογένεια;','Αφαίρεση',()=>FB.deleteDoc(R.member('${esc(e)}')),true)">🗑</button>` : ''}</div>`).join('')}
+    <button class="btn sm soft mt" onclick="memberForm()">➕ Προσθήκη μέλους</button></div>`;
+}
+function memberForm(email) {
+  const m = email ? MEMBERS[email] : { role: 'parent', name: '', focus: 'lang' };
+  modal(`<h3 style="margin-top:0">${email ? 'Επεξεργασία μέλους' : 'Νέο μέλος'}</h3>
+    <div class="field"><label>Email</label><input type="email" id="mfE" value="${esc(email || '')}" ${email ? 'disabled' : ''}></div>
+    <div class="field"><label>Ρόλος</label><select id="mfR" onchange="$('#mfStu').style.display=this.value==='student'?'':'none';$('#mfPar').style.display=this.value==='parent'?'':'none'"><option value="parent" ${m.role === 'parent' ? 'selected' : ''}>Γονιός</option><option value="student" ${m.role === 'student' ? 'selected' : ''}>Μαθητής</option></select></div>
+    <div class="field"><label>Όνομα (ονομαστική)</label><input type="text" id="mfN" value="${esc(m.name || '')}" oninput="if($('#mfR').value==='student'){const f=nameForms(this.value,$('#mfG').value);$('#mfGen').value=f.gen;$('#mfAcc').value=f.acc;$('#mfVoc').value=f.vocative}"></div>
+    <div id="mfPar" style="${m.role === 'parent' ? '' : 'display:none'}"><div class="field"><label>Εστίαση</label><select id="mfF"><option value="math" ${m.focus === 'math' ? 'selected' : ''}>Μαθηματικά</option><option value="lang" ${m.focus === 'lang' ? 'selected' : ''}>Γλώσσα</option></select></div></div>
+    <div id="mfStu" style="${m.role === 'student' ? '' : 'display:none'}"><div class="field"><label>Φύλο</label><select id="mfG"><option value="m" ${m.gender !== 'f' ? 'selected' : ''}>Αγόρι</option><option value="f" ${m.gender === 'f' ? 'selected' : ''}>Κορίτσι</option></select></div>
+      <div class="field"><label>Γενική (του …)</label><input type="text" id="mfGen" value="${esc(m.gen || '')}"></div><div class="field"><label>Αιτιατική (τον …)</label><input type="text" id="mfAcc" value="${esc(m.acc || '')}"></div><div class="field"><label>Κλητική</label><input type="text" id="mfVoc" value="${esc(m.vocative || '')}"></div></div>
+    <div class="row" style="justify-content:flex-end"><button class="btn ghost" onclick="closeModal()">Άκυρο</button><button class="btn" onclick="saveMember(${email ? `'${esc(email)}'` : 'null'})">Αποθήκευση</button></div>`);
+}
+function saveMember(email) {
+  const e = (email || $('#mfE').value.trim()).toLowerCase(); if (!/@/.test(e)) { toast('Γράψτε email'); return; }
+  const role = $('#mfR').value, name = $('#mfN').value.trim() || (role === 'student' ? 'Μαθητής' : 'Γονιός');
+  if (role === 'student' && Object.entries(MEMBERS).some(([k, m]) => m.role === 'student' && k !== e)) { toast('Υπάρχει ήδη μαθητής· η εφαρμογή υποστηρίζει έναν μαθητή ανά οικογένεια.', 5000); return; }
+  const d = role === 'student' ? { role, name, gender: $('#mfG').value, gen: $('#mfGen').value.trim() || name, acc: $('#mfAcc').value.trim() || name, vocative: $('#mfVoc').value.trim() || name } : { role, name, focus: $('#mfF').value };
+  FB.setDoc(R.member(e), d).then(() => { closeModal(); toast('Αποθηκεύτηκε'); }).catch(er => toast('Σφάλμα: ' + er.message));
 }
